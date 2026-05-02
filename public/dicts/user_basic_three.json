@@ -1,0 +1,20 @@
+[
+  {
+    "name": "cat",
+    "trans": ["n. small domesticated feline"],
+    "usphone": "kæt",
+    "ukphone": "kæt"
+  },
+  {
+    "name": "banana",
+    "trans": ["n. elongated tropical fruit"],
+    "usphone": "bəˈnænə",
+    "ukphone": "bəˈnænə"
+  },
+  {
+    "name": "apple",
+    "trans": ["n. round fruit of the apple tree"],
+    "usphone": "ˈæpl",
+    "ukphone": "ˈæpl"
+  }
+]

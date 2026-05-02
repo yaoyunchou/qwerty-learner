@@ -4155,6 +4155,21 @@ const indonesianDicts: DictionaryResource[] = [
   },
 ]
 
+/** 用户示例：纯英语释义小词库（可自行替换 JSON 内容） */
+const userEnglishSamples: DictionaryResource[] = [
+  {
+    id: 'user_basic_three_en',
+    name: '示例词库（英英）',
+    description: '三条示例单词，释义仅英文',
+    category: '英语学习',
+    tags: ['示例'],
+    url: '/dicts/user_basic_three.json',
+    length: 3,
+    language: 'en',
+    languageCategory: 'en',
+  },
+]
+
 /**
  * Built-in dictionaries in an array.
  * Why arrays? Because it keeps the order across browsers.
@@ -4168,6 +4183,7 @@ export const dictionaryResources: DictionaryResource[] = [
   ...germanExam,
   ...kazakhHapinDicts,
   ...indonesianDicts,
+  ...userEnglishSamples,
 
   // {
   //   id: 'zhtest',

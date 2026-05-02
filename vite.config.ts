@@ -50,5 +50,11 @@ export default defineConfig(async ({ mode }) => {
         localsConvention: 'camelCaseOnly',
       },
     },
+    // 云端 / 容器内开发：绑定到所有网卡，便于 Cursor「端口转发」从本机浏览器访问
+    server: {
+      host: true,
+      port: 5173,
+      strictPort: false,
+    },
   }
 })

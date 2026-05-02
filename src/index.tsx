@@ -1,3 +1,4 @@
+import CustomDictSyncProvider from './components/CustomDictSyncProvider'
 import Loading from './components/Loading'
 import './index.css'
 import { ErrorBook } from './pages/ErrorBook'
@@ -49,6 +50,7 @@ function Root() {
 
   return (
     <React.StrictMode>
+      <CustomDictSyncProvider />
       <BrowserRouter basename={REACT_APP_DEPLOY_ENV === 'pages' ? '/qwerty-learner' : ''}>
         <Suspense fallback={<Loading />}>
           <Routes>
