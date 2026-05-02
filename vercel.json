@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "HUSKY=0 pnpm install --frozen-lockfile",
+  "installCommand": "npm i -g pnpm@9.15.9 && HUSKY=0 pnpm install --frozen-lockfile",
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
   "rewrites": [
