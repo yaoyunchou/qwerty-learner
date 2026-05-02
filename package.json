@@ -73,7 +73,7 @@
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "prettier": "prettier --write .",
-    "prepare": "husky install"
+    "prepare": "husky install || true"
   },
   "lint-staged": {
     "src/**/*.{js,jsx,ts,tsx}": [
