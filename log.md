@@ -2,6 +2,10 @@
 
 ## 2026-05-02
 
+### Vercel 部署输出目录
+
+- 新增仓库根目录 `vercel.json`，设置 `outputDirectory` 为 `build`，与 `vite.config.ts` 里 `build.outDir` 一致，避免平台默认查找 `dist` 导致 「No Output Directory named dist」 报错。
+
 ### 自定义词库本地导入功能
 
 实现了浏览器端「导入自定义词库」完整功能链路：
