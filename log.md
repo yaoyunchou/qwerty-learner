@@ -22,9 +22,10 @@
 
 ### Vercel 部署配置（vercel.json + 构建 base）
 
-- **`vercel.json`**：`installCommand` **`pnpm install`**，`buildCommand` **`pnpm run build`**，`outputDirectory` **`build`**，SPA **`rewrites`** 回退到 **`index.html`**（先匹配输出目录内静态文件，如 `/dicts/*.json`）。
-- **`vite.config.ts`**：根据 **`process.env.VERCEL`** 设置 `base` —— Vercel 构建为 **`'/'`**，本地/GitHub Pages 为 **`'./'`**。此前 `build` 脚本写死 **`--base=./`**，在 Vercel 根域名下访问 **`/gallery`** 时会把 `./assets/…` 解析成 **`/gallery/assets/…`** 导致白屏。
+- **`vercel.json`**：`installCommand` **`pnpm install`**，`buildCommand` **`pnpm run build`**，`outputDirectory` **`dist`**（与 Vite 默认一致；此前使用 **`build`** 时若控制台仍为 Vite 预设会去 **`dist`** 找产物，易出现 **`No Output Directory named "dist" found`**），SPA **`rewrites`** 回退到 **`index.html`**。
+- **`vite.config.ts`**：`build.outDir` **`dist`**；根据 **`process.env.VERCEL`** 设置 `base` —— Vercel 构建为 **`'/'`**，本地/GitHub Pages 为 **`'./'`**。此前 `build` 脚本写死 **`--base=./`**，在 Vercel 根域名下访问 **`/gallery`** 时会把 `./assets/…` 解析成 **`/gallery/assets/…`** 导致白屏。
 - **`package.json`**：已从 **`build`** 脚本中移除 **`--base=./`**，统一由 `vite.config.ts` 的 `base` 决定。
+- **控制台**：建议在 Vercel **Build & Development Settings** 中将 **Output Directory** 设为 **`dist`**，并关闭与 **`vercel.json`** 冲突的 **Override**。
 
 ### Husky pre-commit 无 yarn
 

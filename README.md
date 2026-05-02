@@ -55,7 +55,7 @@ GitHub Pages: <https://realkai42.github.io/qwerty-learner/>
 
 #### 部署步骤
 
-1. 仓库根目录 `vercel.json`：**Install** `pnpm install`，**Build** `pnpm run build`，**Output Directory** `build`，以及 SPA **rewrites**（子路径回退到 `index.html`）。构建时 Vercel 会注入环境变量 `VERCEL`，`vite.config.ts` 据此使用 **`base: '/'`**；本地/GitHub Pages 构建仍为 **`base: './`**，避免深链接下脚本请求落到 `/xxx/assets/…` 导致白屏。
+1. 仓库根目录 `vercel.json`：**Install** `pnpm install`，**Build** `pnpm run build`，**Output Directory** `dist`（与 Vite 默认一致，避免控制台仍为 Vite 预设时去找 `dist` 而本地产物在 `build` 导致部署失败），以及 SPA **rewrites**（子路径回退到 `index.html`）。构建时 Vercel 会注入环境变量 `VERCEL`，`vite.config.ts` 据此使用 **`base: '/'`**；本地/GitHub Pages 构建仍为 **`base: './`**，避免深链接下脚本请求落到 `/xxx/assets/…` 导致白屏。
 2. 若在 Vercel 控制台曾勾选 **Override**，请关闭或与上述一致，否则仓库内配置可能被覆盖。
 3. Click Deploy Button
 

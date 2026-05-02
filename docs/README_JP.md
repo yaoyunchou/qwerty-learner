@@ -50,7 +50,7 @@ Gitee Pages: <https://kaiyiwing.gitee.io/qwerty-learner/>
 
 #### デプロイ手順
 
-1. `Vercel Build & Development Settings` -> `Output Directory` を "build" に更新します。
+1. `Vercel Build & Development Settings` -> `Output Directory` を "dist" に更新します。
 2. デプロイボタンをクリックします。
 
 <br />

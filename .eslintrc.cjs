@@ -6,7 +6,7 @@ module.exports = {
     es2021: true,
   },
   extends: ['prettier'],
-  ignorePatterns: ['build'],
+  ignorePatterns: ['dist'],
   overrides: [
     {
       files: ['scripts/*.cjs', '.eslintrc.cjs'],
