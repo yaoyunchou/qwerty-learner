@@ -22,10 +22,12 @@
 
 ### Vercel 部署配置（vercel.json + 构建 base）
 
-- **`vercel.json`**：`installCommand` **`pnpm install`**，`buildCommand` **`pnpm run build`**，`outputDirectory` **`dist`**（与 Vite 默认一致；此前使用 **`build`** 时若控制台仍为 Vite 预设会去 **`dist`** 找产物，易出现 **`No Output Directory named "dist" found`**），SPA **`rewrites`** 回退到 **`index.html`**。
+- **`vercel.json`**：`installCommand` 使用 **`corepack`** 激活 **`pnpm@9.15.9`**，执行 **`HUSKY=0 pnpm install --frozen-lockfile`**（避免 CI 下 husky、并与锁定依赖一致）；**`buildCommand`** **`pnpm run build`**；**`outputDirectory`** **`dist`**；SPA **`rewrites`** 回退到 **`index.html`**。
+- **`pnpm-lock.yaml`**：已从 **`.gitignore`** 移除并纳入版本库（此前忽略导致远端 **`pnpm install`** 无 lockfile，易解析失败或与本地不一致）。
+- **`package.json`**：声明 **`packageManager`**：**`pnpm@9.15.9`**；**`pnpm.onlyBuiltDependencies`** 允许 **`esbuild`** 等在安装阶段执行必要脚本。
 - **`vite.config.ts`**：`build.outDir` **`dist`**；根据 **`process.env.VERCEL`** 设置 `base` —— Vercel 构建为 **`'/'`**，本地/GitHub Pages 为 **`'./'`**。此前 `build` 脚本写死 **`--base=./`**，在 Vercel 根域名下访问 **`/gallery`** 时会把 `./assets/…` 解析成 **`/gallery/assets/…`** 导致白屏。
 - **`package.json`**：已从 **`build`** 脚本中移除 **`--base=./`**，统一由 `vite.config.ts` 的 `base` 决定。
-- **控制台**：建议在 Vercel **Build & Development Settings** 中将 **Output Directory** 设为 **`dist`**，并关闭与 **`vercel.json`** 冲突的 **Override**。
+- **控制台**：建议在 Vercel **Build & Development Settings** 中将 **Output Directory** 设为 **`dist`**，并关闭与 **`vercel.json`** 冲突的 **Install Command Override**。
 
 ### Husky pre-commit 无 yarn
 

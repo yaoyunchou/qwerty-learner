@@ -25,7 +25,6 @@ yarn-error.log*
 .yarn
 .eslintcache
 package-lock.json
-pnpm-lock.yaml
 .env
 stats.html
 
