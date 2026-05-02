@@ -9,12 +9,16 @@ import Icons from 'unplugin-icons/vite'
 import { defineConfig } from 'vite'
 import type { PluginOption } from 'vite'
 
+// GitHub Pages 等场景用相对路径 `./`；Vercel 根路径部署必须用 `/`，否则访问 /gallery 时脚本会变成 /gallery/assets/… 导致 404。
+const viteBase = process.env.VERCEL ? '/' : './'
+
 // https://vitejs.dev/config/
 export default defineConfig(async ({ mode }) => {
   const latestCommitHash = await new Promise<string>((resolve) => {
     return getLastCommit((err, commit) => (err ? 'unknown' : resolve(commit.shortHash)))
   })
   return {
+    base: viteBase,
     plugins: [
       react({ babel: { plugins: [jotaiDebugLabel, jotaiReactRefresh] } }),
       visualizer() as PluginOption,

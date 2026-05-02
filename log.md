@@ -2,11 +2,6 @@
 
 ## 2026-05-02
 
-### Vercel 部署配置
-
-- 新增根目录 `vercel.json`：`outputDirectory` 设为 `build`（避免 Vite 预设默认查找 `dist` 导致构建产物目录不匹配）；`buildCommand` 为 `npm run build`；`rewrites` 将非静态资源请求落到 `index.html`，支持 React Router 深链。
-- `readme.md` 中 Vercel 小节补充与 `vercel.json`、控制台设置一致的说明。
-
 ### 自定义词库本地导入功能
 
 实现了浏览器端「导入自定义词库」完整功能链路：
@@ -24,6 +19,12 @@
 
 - `.eslintrc.cjs` 使用了 `plugin:@typescript-eslint/recommended`，但未在根目录声明依赖；pnpm 不会把 `eslint-config-react-app` 嵌套依赖提升到根 `node_modules`，导致 pre-commit 里 ESLint 解析失败。
 - 已在 `package.json` 的 `devDependencies` 中显式添加 `@typescript-eslint/eslint-plugin`、`@typescript-eslint/parser`（^5.62.0，与 CRA 7 所用 v5 一致）。
+
+### Vercel 部署配置（vercel.json + 构建 base）
+
+- **`vercel.json`**：`installCommand` **`pnpm install`**，`buildCommand` **`pnpm run build`**，`outputDirectory` **`build`**，SPA **`rewrites`** 回退到 **`index.html`**（先匹配输出目录内静态文件，如 `/dicts/*.json`）。
+- **`vite.config.ts`**：根据 **`process.env.VERCEL`** 设置 `base` —— Vercel 构建为 **`'/'`**，本地/GitHub Pages 为 **`'./'`**。此前 `build` 脚本写死 **`--base=./`**，在 Vercel 根域名下访问 **`/gallery`** 时会把 `./assets/…` 解析成 **`/gallery/assets/…`** 导致白屏。
+- **`package.json`**：已从 **`build`** 脚本中移除 **`--base=./`**，统一由 `vite.config.ts` 的 `base` 决定。
 
 ### Husky pre-commit 无 yarn
 
