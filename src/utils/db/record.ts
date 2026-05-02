@@ -1,5 +1,5 @@
 import { getUTCUnixTimestamp } from '../index'
-import type { Word } from '@/typings'
+import type { LanguageCategoryType, LanguageType, Word } from '@/typings'
 
 export interface IWordRecord {
   word: string
@@ -143,6 +143,16 @@ export class ReviewRecord implements IReviewRecord {
     this.words = words
     this.isFinished = false
   }
+}
+
+export interface ICustomDict {
+  id?: number
+  dictId: string
+  name: string
+  language: LanguageType
+  languageCategory: LanguageCategoryType
+  words: Word[]
+  createdAt: number
 }
 
 export interface IRevisionDictRecord {
