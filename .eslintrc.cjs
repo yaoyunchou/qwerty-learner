@@ -6,7 +6,7 @@ module.exports = {
     es2021: true,
   },
   extends: ['prettier'],
-  ignorePatterns: ['dist'],
+  ignorePatterns: ['dist', 'build', 'node_modules', 'public/dicts'],
   overrides: [
     {
       files: ['scripts/*.cjs', '.eslintrc.cjs'],
@@ -16,7 +16,7 @@ module.exports = {
       parserOptions: { sourceType: 'script' },
     },
     {
-      files: ['vite.config.ts'],
+      files: ['vite.config.ts', 'playwright.config.ts'],
       env: { node: true },
       extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
       parser: '@typescript-eslint/parser',
@@ -27,7 +27,14 @@ module.exports = {
       plugins: ['@typescript-eslint'],
     },
     {
-      files: ['src/**/*.ts', 'src/**/*.tsx', 'test/**/*.ts', 'test/**/*.tsx'],
+      files: ['tailwind.config.js', 'postcss.config.js', 'prettier.config.js'],
+      env: { node: true },
+      extends: ['eslint:recommended'],
+      parser: 'espree',
+      parserOptions: { sourceType: 'script', ecmaVersion: 'latest' },
+    },
+    {
+      files: ['src/**/*.ts', 'src/**/*.tsx'],
       env: { browser: true },
       extends: [
         'eslint:recommended',
@@ -47,6 +54,17 @@ module.exports = {
           version: 'detect',
         },
       },
+    },
+    {
+      files: ['tests/**/*.ts', 'tests/**/*.tsx'],
+      env: { node: true },
+      extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
+      parser: '@typescript-eslint/parser',
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
+      plugins: ['@typescript-eslint'],
     },
   ],
   rules: {

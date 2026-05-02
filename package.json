@@ -76,8 +76,32 @@
     "prepare": "husky install"
   },
   "lint-staged": {
-    "src/**/*.{js,jsx,ts,tsx,json,css,scss,md}": [
-      "prettier --write"
+    "src/**/*.{js,jsx,ts,tsx}": [
+      "bash scripts/with-node-path.sh node ./node_modules/eslint/bin/eslint.js --fix",
+      "bash scripts/with-node-path.sh node ./node_modules/prettier/bin-prettier.js --write"
+    ],
+    "tests/**/*.{js,jsx,ts,tsx}": [
+      "bash scripts/with-node-path.sh node ./node_modules/eslint/bin/eslint.js --fix",
+      "bash scripts/with-node-path.sh node ./node_modules/prettier/bin-prettier.js --write"
+    ],
+    "{vite,playwright}.config.ts": [
+      "bash scripts/with-node-path.sh node ./node_modules/eslint/bin/eslint.js --fix",
+      "bash scripts/with-node-path.sh node ./node_modules/prettier/bin-prettier.js --write"
+    ],
+    "scripts/**/*.{js,cjs,mjs}": [
+      "bash scripts/with-node-path.sh node ./node_modules/eslint/bin/eslint.js --fix",
+      "bash scripts/with-node-path.sh node ./node_modules/prettier/bin-prettier.js --write"
+    ],
+    "{tailwind,postcss,prettier}.config.js": [
+      "bash scripts/with-node-path.sh node ./node_modules/eslint/bin/eslint.js --fix",
+      "bash scripts/with-node-path.sh node ./node_modules/prettier/bin-prettier.js --write"
+    ],
+    ".eslintrc.cjs": [
+      "bash scripts/with-node-path.sh node ./node_modules/eslint/bin/eslint.js --fix",
+      "bash scripts/with-node-path.sh node ./node_modules/prettier/bin-prettier.js --write"
+    ],
+    "**/*.{json,css,scss,md,yml,yaml}": [
+      "bash scripts/with-node-path.sh node ./node_modules/prettier/bin-prettier.js --write"
     ]
   },
   "browserslist": {

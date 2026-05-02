@@ -31,8 +31,10 @@
 
 ### Husky pre-commit 无 yarn
 
-- `.husky/pre-commit` 不再调用全局 `yarn`（Xcode / GUI Git 等环境下 PATH 常无 yarn）。
-- 改为在仓库根目录执行 `bash scripts/with-node-path.sh node ./node_modules/...` 调用 lint-staged、eslint、prettier，与现有 Node 查找逻辑一致。
+- `.husky/pre-commit` **只运行 `lint-staged`**：仅对已暂存文件跑 **ESLint `--fix`** 与 **Prettier**，已移除 **`eslint . --fix`** 与 **`prettier --write .`**（避免扫全仓库、误处理 **`dist`** 产物导致崩溃或过慢）。
+- **`lint-staged`**（见 `package.json`）：编排 **`src/`**、**`tests/`**、**`vite.config.ts` / `playwright.config.ts`**、**`scripts/`**、根目录 **`tailwind/postcss/prettier.config.js`**、**`.eslintrc.cjs`**，以及 **`*.json` / YAML / Markdown / CSS**；命令一律经 **`scripts/with-node-path.sh`** 调用仓库内 CLI。
+- **`.prettierignore`**：**`dist`**、**`pnpm-lock.yaml`** 等不参与格式化。
+- **`.eslintrc.cjs`**：**`tests/`** 使用 **`node` + TypeScript**（Playwright）；**`src/`** 仍为浏览器 + React；扩展 **`playwright.config.ts`** 与若干 **`*.config.js`** 的 override。
 
 ### 云端重启后 PATH 无 Node
 
