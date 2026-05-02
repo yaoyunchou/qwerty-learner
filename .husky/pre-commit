@@ -1,6 +1,9 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-yarn run lint-staged
-yarn run eslint . --fix
-yarn run prettier --write .
+cd "$(dirname "$0")/.." || exit 1
+
+# GUI Git / 精简 PATH 下可能没有 yarn；与 package.json 一致用 with-node-path + 本地 CLI
+bash scripts/with-node-path.sh node ./node_modules/lint-staged/bin/lint-staged.js
+bash scripts/with-node-path.sh node ./node_modules/eslint/bin/eslint.js . --fix
+bash scripts/with-node-path.sh node ./node_modules/prettier/bin-prettier.js --write .

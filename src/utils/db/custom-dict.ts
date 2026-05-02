@@ -26,6 +26,67 @@ export function extractDictIdFromUrl(url: string): string {
   return url.replace('custom://', '')
 }
 
+/** 文本词库每行：单词 + 空格 + 可选 /音标/ + 空格 + 释义。空行与 # 开头行为注释。 */
+const TXT_LINE_WITH_PHONETIC = /^(\S+)\s+(\/[^/\r\n]+\/)\s+(.+)$/
+const TXT_LINE_SIMPLE = /^(\S+)\s+(.+)$/
+
+export function parseTxtWordList(text: string): { ok: true; words: Word[] } | { ok: false; message: string } {
+  const lines = text.split(/\r?\n/)
+  const words: Word[] = []
+  const errors: string[] = []
+
+  lines.forEach((raw, idx) => {
+    const line = raw.trim()
+    if (!line || line.startsWith('#')) return
+
+    const lineNum = idx + 1
+    const withPhone = line.match(TXT_LINE_WITH_PHONETIC)
+    if (withPhone) {
+      const phonetic = withPhone[2].slice(1, -1).trim()
+      const transText = withPhone[3].trim()
+      if (!transText) {
+        errors.push(`第 ${lineNum} 行：释义不能为空`)
+        return
+      }
+      words.push({
+        name: withPhone[1],
+        trans: [transText],
+        usphone: phonetic,
+        ukphone: phonetic,
+      })
+      return
+    }
+
+    const simple = line.match(TXT_LINE_SIMPLE)
+    if (simple) {
+      const transText = simple[2].trim()
+      if (!transText) {
+        errors.push(`第 ${lineNum} 行：释义不能为空`)
+        return
+      }
+      words.push({
+        name: simple[1],
+        trans: [transText],
+        usphone: '',
+        ukphone: '',
+      })
+      return
+    }
+
+    errors.push(`第 ${lineNum} 行：无法解析（格式应为「单词 /音标/ 释义」或「单词 释义」）`)
+  })
+
+  if (errors.length > 0) {
+    const preview = errors.slice(0, 5).join('；')
+    const more = errors.length > 5 ? ` … 共 ${errors.length} 处` : ''
+    return { ok: false, message: preview + more }
+  }
+  if (words.length === 0) {
+    return { ok: false, message: '文件中没有有效词条（支持空行与 # 注释行）' }
+  }
+  return { ok: true, words }
+}
+
 export function validateWordList(data: unknown): data is Word[] {
   if (!Array.isArray(data)) return false
   if (data.length === 0) return false

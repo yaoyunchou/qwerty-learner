@@ -11,8 +11,19 @@
 - **全局状态合并**：`src/store/index.ts` 新增 `customDictionariesAtom`，`currentDictInfoAtom` 查找时先查内置 `idDictionaryMap`，再查自定义词典列表。新增 `CustomDictSyncProvider` 组件将 Dexie live query 同步到 Jotai atom
 - **词条加载**：`wordListFetcher` 支持 `custom://` 伪协议 URL，拦截后从 IndexedDB 读取词条而非 HTTP fetch
 - **导入弹窗 UI**：新建 `ImportDictModal.tsx`，支持选择 JSON 文件、命名词库、选择语言类型、格式校验、错误提示
+- **TXT 词库导入**：`custom-dict.ts` 新增 `parseTxtWordList`，每行「单词 /音标/ 释义」或「单词 释义」，空行与 `#` 注释跳过；音标写入 `usphone`/`ukphone`。Gallery「导入词库」同时接受 `.txt` 与 `.json`（`ImportDictModal.tsx`）
 - **Gallery 展示**：新建 `CustomDictSection.tsx`（"我的词库"区域）+ `CustomDictCard.tsx`（带删除按钮的自定义词典卡片），集成到 Gallery-N 词典列表顶部
 - **边界处理**：删除当前选中的自定义词典时自动回退到 CET-4；Typing 页面校验 dict id 时同时检查自定义词典列表
+
+### ESLint 找不到 @typescript-eslint（pnpm）
+
+- `.eslintrc.cjs` 使用了 `plugin:@typescript-eslint/recommended`，但未在根目录声明依赖；pnpm 不会把 `eslint-config-react-app` 嵌套依赖提升到根 `node_modules`，导致 pre-commit 里 ESLint 解析失败。
+- 已在 `package.json` 的 `devDependencies` 中显式添加 `@typescript-eslint/eslint-plugin`、`@typescript-eslint/parser`（^5.62.0，与 CRA 7 所用 v5 一致）。
+
+### Husky pre-commit 无 yarn
+
+- `.husky/pre-commit` 不再调用全局 `yarn`（Xcode / GUI Git 等环境下 PATH 常无 yarn）。
+- 改为在仓库根目录执行 `bash scripts/with-node-path.sh node ./node_modules/...` 调用 lint-staged、eslint、prettier，与现有 Node 查找逻辑一致。
 
 ### 云端重启后 PATH 无 Node
 

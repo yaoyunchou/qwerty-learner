@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import type { LanguageCategoryType, LanguageType } from '@/typings'
-import { saveCustomDict, validateWordList } from '@/utils/db/custom-dict'
+import { parseTxtWordList, saveCustomDict, validateWordList } from '@/utils/db/custom-dict'
 import { useCallback, useRef, useState } from 'react'
 import IconFileUpload from '~icons/tabler/file-upload'
 
@@ -45,8 +45,11 @@ export default function ImportDictModal() {
       setFileError('')
       setParsedWords(null)
 
-      if (!file.name.endsWith('.json')) {
-        setFileError('请选择 .json 文件')
+      const lower = file.name.toLowerCase()
+      const isJson = lower.endsWith('.json')
+      const isTxt = lower.endsWith('.txt')
+      if (!isJson && !isTxt) {
+        setFileError('请选择 .txt 或 .json 文件')
         return
       }
 
@@ -57,13 +60,23 @@ export default function ImportDictModal() {
 
       setFileName(file.name)
       if (!name) {
-        setName(file.name.replace(/\.json$/i, ''))
+        setName(file.name.replace(/\.(json|txt)$/i, ''))
       }
 
       const reader = new FileReader()
       reader.onload = (ev) => {
+        const raw = ev.target?.result as string
+        if (isTxt) {
+          const parsed = parseTxtWordList(raw)
+          if (!parsed.ok) {
+            setFileError(parsed.message)
+            return
+          }
+          setParsedWords(parsed.words)
+          return
+        }
         try {
-          const data = JSON.parse(ev.target?.result as string)
+          const data = JSON.parse(raw)
           if (!validateWordList(data)) {
             setFileError('文件格式不正确。需要一个数组，每项至少包含 name (string) 和 trans (string[])')
             return
@@ -117,7 +130,10 @@ export default function ImportDictModal() {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>导入自定义词库</DialogTitle>
-          <DialogDescription>选择一个 JSON 文件，词条格式：[{`{ "name": "word", "trans": ["释义"] }`}, ...]</DialogDescription>
+          <DialogDescription>
+            优先使用纯文本 .txt：每行「单词 /音标/ 释义」或「单词 释义」，空行与以 # 开头的行为注释。仍支持 JSON 数组导入（每项含
+            name、trans）。
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -154,13 +170,23 @@ export default function ImportDictModal() {
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">选择文件</label>
-            <input ref={fileInputRef} type="file" accept=".json" onChange={onFileChange} className="hidden" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,.json,text/plain,application/json"
+              onChange={onFileChange}
+              className="hidden"
+            />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="flex w-full items-center justify-center rounded-md border-2 border-dashed border-gray-300 px-4 py-6 text-sm text-gray-500 transition-colors hover:border-indigo-400 hover:text-indigo-500 dark:border-gray-600 dark:text-gray-400 dark:hover:border-indigo-400"
             >
-              {fileName ? <span className="text-indigo-600 dark:text-indigo-400">{fileName}</span> : <span>点击选择 JSON 文件</span>}
+              {fileName ? (
+                <span className="text-indigo-600 dark:text-indigo-400">{fileName}</span>
+              ) : (
+                <span>点击选择 .txt 或 .json 文件</span>
+              )}
             </button>
           </div>
 
