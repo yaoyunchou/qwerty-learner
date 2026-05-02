@@ -55,8 +55,9 @@ GitHub Pages: <https://realkai42.github.io/qwerty-learner/>
 
 #### 部署步骤
 
-1. 更新 `Vercel Build & Development Settings` -> `Output Directory`："build"
-2. Click Deploy Button
+1. 仓库根目录已包含 `vercel.json`：`outputDirectory` 为 **`build`**（与 `vite.config.ts` 一致），并配置了 SPA 路由回退（直接打开 `/gallery` 等子路径不会 404）。
+2. 若你在控制台曾改过构建选项，可与文件保持一致：**Build Command** `npm run build`，**Output Directory** `build`，**Root Directory** 留空（除非前端在子目录）。
+3. Click Deploy Button
 
 <br />
 

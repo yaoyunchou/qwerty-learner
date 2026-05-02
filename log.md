@@ -2,6 +2,11 @@
 
 ## 2026-05-02
 
+### Vercel 部署配置
+
+- 新增根目录 `vercel.json`：`outputDirectory` 设为 `build`（避免 Vite 预设默认查找 `dist` 导致构建产物目录不匹配）；`buildCommand` 为 `npm run build`；`rewrites` 将非静态资源请求落到 `index.html`，支持 React Router 深链。
+- `readme.md` 中 Vercel 小节补充与 `vercel.json`、控制台设置一致的说明。
+
 ### 自定义词库本地导入功能
 
 实现了浏览器端「导入自定义词库」完整功能链路：
