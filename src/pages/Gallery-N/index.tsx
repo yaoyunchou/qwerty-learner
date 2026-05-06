@@ -1,4 +1,5 @@
 import DictionaryGroup from './CategoryDicts'
+import CloudDictSection from './CloudDictSection'
 import CustomDictSection from './CustomDictSection'
 import DictRequest from './DictRequest'
 import { LanguageTabSwitcher } from './LanguageTabSwitcher'
@@ -75,6 +76,7 @@ export default function GalleryPage() {
               <ScrollArea.Root className="flex-1 overflow-y-auto">
                 <ScrollArea.Viewport className="h-full w-full ">
                   <div className="mr-4 flex flex-1 flex-col items-start justify-start gap-14 overflow-y-auto">
+                    <CloudDictSection />
                     <CustomDictSection />
                     {groupedByCategoryAndTag.map(([category, groupeByTag]) => (
                       <DictionaryGroup key={category} groupedDictsByTag={groupeByTag} />
