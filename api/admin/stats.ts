@@ -75,7 +75,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     const stats = {
       totalDictionaries,
       totalWords,
-      categories,
+      categories: categories.length,
     }
 
     cachedStats = { data: stats, timestamp: now }

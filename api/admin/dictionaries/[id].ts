@@ -27,10 +27,10 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Dictionary id is required' })
     }
 
-    const sanitizedId = id.replace(/[^a-zA-Z0-9_\-]/g, '')
-    if (sanitizedId !== id) {
+    if (/[/\\]/.test(id)) {
       return res.status(400).json({ error: 'Invalid dictionary id' })
     }
+    const sanitizedId = id
 
     const filePath = path.join(process.cwd(), 'public', 'dicts', `${sanitizedId}.json`)
 
@@ -54,6 +54,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       id: sanitizedId,
+      name: sanitizedId,
       totalWords,
       page,
       pageSize,

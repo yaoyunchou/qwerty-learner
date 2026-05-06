@@ -18,6 +18,12 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 const AnalysisPage = lazy(() => import('./pages/Analysis'))
 const GalleryPage = lazy(() => import('./pages/Gallery-N'))
+const AdminLayout = lazy(() => import('./pages/Admin'))
+const AdminLogin = lazy(() => import('./pages/Admin/Login'))
+const AdminDashboard = lazy(() => import('./pages/Admin/Dashboard'))
+const AdminDictionaries = lazy(() => import('./pages/Admin/Dictionaries'))
+const AdminDictDetail = lazy(() => import('./pages/Admin/DictDetail'))
+const AdminAbout = lazy(() => import('./pages/Admin/About'))
 
 if (process.env.NODE_ENV === 'production') {
   // for prod
@@ -67,6 +73,13 @@ function Root() {
               </>
             )}
             <Route path="/mobile" element={<MobilePage />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="dictionaries" element={<AdminDictionaries />} />
+              <Route path="dictionaries/:id" element={<AdminDictDetail />} />
+              <Route path="about" element={<AdminAbout />} />
+            </Route>
           </Routes>
         </Suspense>
       </BrowserRouter>

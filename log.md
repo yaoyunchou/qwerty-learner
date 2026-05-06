@@ -2,6 +2,32 @@
 
 ## 2026-05-02
 
+### 管理后台（Admin Panel）
+
+为项目新增了管理后台，可与前端一起部署到 Vercel。
+
+**后端 API（Vercel Serverless Functions）：**
+- `api/admin/login.ts`：管理员登录，通过环境变量 `ADMIN_PASSWORD` 校验
+- `api/admin/auth.ts`：Bearer token 鉴权工具
+- `api/admin/stats.ts`：仪表盘统计（词典总数、单词总数、分类数量），60 秒内存缓存
+- `api/admin/dictionaries.ts`：词典列表，读取 `public/dicts/` 目录
+- `api/admin/dictionaries/[id].ts`：单个词典详情，支持分页
+
+**前端 UI（React + Tailwind）：**
+- `src/pages/Admin/Login.tsx`：渐变背景登录页
+- `src/pages/Admin/index.tsx`：响应式侧边栏布局 + 鉴权守卫
+- `src/pages/Admin/Dashboard.tsx`：数据统计卡片
+- `src/pages/Admin/Dictionaries.tsx`：可搜索、排序、分页的词典列表
+- `src/pages/Admin/DictDetail.tsx`：词典详情 / 单词列表
+- `src/pages/Admin/About.tsx`：关于页面
+- `src/pages/Admin/hooks.ts`：`useAdminAuth` / `useAdminFetch` 共享 Hooks
+
+**路由 & 配置：**
+- `src/index.tsx`：新增 `/admin/*` 懒加载路由（全部 code-split）
+- `vercel.json`：`outputDirectory: "build"` + SPA fallback rewrite
+
+**使用方式：** 在 Vercel 环境变量中设置 `ADMIN_PASSWORD`，访问 `/admin/login` 即可登录。
+
 ### Vercel 部署输出目录
 
 - 新增仓库根目录 `vercel.json`，设置 `outputDirectory` 为 `build`，与 `vite.config.ts` 里 `build.outDir` 一致，避免平台默认查找 `dist` 导致 「No Output Directory named dist」 报错。
