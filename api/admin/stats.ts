@@ -1,7 +1,7 @@
+import { checkAuth } from './auth'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import fs from 'fs'
 import path from 'path'
-import { checkAuth } from './auth'
 
 let cachedStats: { data: Record<string, unknown>; timestamp: number } | null = null
 const CACHE_TTL_MS = 60_000

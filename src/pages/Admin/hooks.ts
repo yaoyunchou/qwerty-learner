@@ -1,68 +1,57 @@
+import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-const TOKEN_KEY = 'admin_token'
-
 export function useAdminAuth() {
   const navigate = useNavigate()
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY))
+  const { isLoggedIn, signOut } = useAuth()
 
-  const isAuthenticated = !!token
-
-  const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY)
-    setToken(null)
+  const logout = useCallback(async () => {
+    await signOut()
     navigate('/admin/login')
-  }, [navigate])
+  }, [signOut, navigate])
 
-  return { token, isAuthenticated, logout }
+  return { isAuthenticated: isLoggedIn, logout }
 }
 
-interface UseAdminFetchResult<T> {
+interface UseSupabaseQueryResult<T> {
   data: T | null
   loading: boolean
   error: string | null
   refetch: () => void
 }
 
-export function useAdminFetch<T = unknown>(url: string | null): UseAdminFetchResult<T> {
+export function useSupabaseQuery<T>(
+  queryFn: (() => Promise<{ data: T | null; error: { message: string } | null }>) | null,
+): UseSupabaseQueryResult<T> {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fetchCount, setFetchCount] = useState(0)
 
-  const token = localStorage.getItem(TOKEN_KEY)
-
-  const refetch = useCallback(() => {
-    setFetchCount((c) => c + 1)
-  }, [])
+  const refetch = useCallback(() => setFetchCount((c) => c + 1), [])
 
   useEffect(() => {
-    if (!url) return
+    if (!queryFn) return
 
     let cancelled = false
     setLoading(true)
     setError(null)
 
-    fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`请求失败 (${res.status})`)
-        return res.json()
-      })
-      .then((json) => {
-        if (!cancelled) {
-          setData(json)
-          setLoading(false)
+    queryFn()
+      .then(({ data: d, error: e }) => {
+        if (cancelled) return
+        if (e) {
+          setError(e.message)
+        } else {
+          setData(d)
         }
+        setLoading(false)
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err.message || '未知错误')
+          setError(err?.message ?? '未知错误')
           setLoading(false)
         }
       })
@@ -70,7 +59,9 @@ export function useAdminFetch<T = unknown>(url: string | null): UseAdminFetchRes
     return () => {
       cancelled = true
     }
-  }, [url, token, fetchCount])
+  }, [queryFn, fetchCount])
 
   return { data, loading, error, refetch }
 }
+
+export { supabase }

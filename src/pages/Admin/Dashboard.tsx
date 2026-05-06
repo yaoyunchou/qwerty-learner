@@ -1,10 +1,13 @@
-import { useAdminFetch } from './hooks'
-import { BarChart3, BookOpen, FileText, FolderOpen } from 'lucide-react'
+import { supabase } from './hooks'
+import { BarChart3, BookOpen, FileText, FolderOpen, Heart, Inbox } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 
 interface Stats {
-  totalDictionaries: number
-  totalWords: number
-  categories: number
+  wordbooks: number
+  wordbookItems: number
+  favorites: number
+  phrases: number
+  pendingSubmissions: number
 }
 
 function SkeletonCard() {
@@ -44,7 +47,38 @@ function StatCard({ title, value, icon, color, bgColor }: StatCardProps) {
 }
 
 export default function Dashboard() {
-  const { data, loading, error, refetch } = useAdminFetch<Stats>('/api/admin/stats')
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchStats = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const [wb, wi, fav, ph, sub] = await Promise.all([
+        supabase.from('user_wordbooks').select('*', { count: 'exact', head: true }),
+        supabase.from('wordbook_items').select('*', { count: 'exact', head: true }),
+        supabase.from('user_favorites').select('*', { count: 'exact', head: true }),
+        supabase.from('user_phrases').select('*', { count: 'exact', head: true }),
+        supabase.from('word_submissions').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      ])
+      setStats({
+        wordbooks: wb.count ?? 0,
+        wordbookItems: wi.count ?? 0,
+        favorites: fav.count ?? 0,
+        phrases: ph.count ?? 0,
+        pendingSubmissions: sub.count ?? 0,
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '加载失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
 
   if (error) {
     return (
@@ -55,7 +89,7 @@ export default function Dashboard() {
         <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">加载失败</h3>
         <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">{error}</p>
         <button
-          onClick={refetch}
+          onClick={fetchStats}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
         >
           重新加载
@@ -64,28 +98,42 @@ export default function Dashboard() {
     )
   }
 
-  const cards: StatCardProps[] = data
+  const cards: StatCardProps[] = stats
     ? [
         {
-          title: '词典总数',
-          value: data.totalDictionaries,
+          title: '词本数',
+          value: stats.wordbooks,
           icon: <BookOpen className="h-6 w-6" />,
           color: 'text-indigo-600 dark:text-indigo-400',
           bgColor: 'bg-indigo-100 dark:bg-indigo-900/50',
         },
         {
-          title: '单词总数',
-          value: data.totalWords,
+          title: '词条数',
+          value: stats.wordbookItems,
           icon: <FileText className="h-6 w-6" />,
           color: 'text-blue-600 dark:text-blue-400',
           bgColor: 'bg-blue-100 dark:bg-blue-900/50',
         },
         {
-          title: '分类数量',
-          value: data.categories,
+          title: '收藏数',
+          value: stats.favorites,
+          icon: <Heart className="h-6 w-6" />,
+          color: 'text-pink-600 dark:text-pink-400',
+          bgColor: 'bg-pink-100 dark:bg-pink-900/50',
+        },
+        {
+          title: '短句数',
+          value: stats.phrases,
           icon: <FolderOpen className="h-6 w-6" />,
           color: 'text-emerald-600 dark:text-emerald-400',
           bgColor: 'bg-emerald-100 dark:bg-emerald-900/50',
+        },
+        {
+          title: '待审核投稿',
+          value: stats.pendingSubmissions,
+          icon: <Inbox className="h-6 w-6" />,
+          color: 'text-amber-600 dark:text-amber-400',
+          bgColor: 'bg-amber-100 dark:bg-amber-900/50',
         },
       ]
     : []
@@ -96,10 +144,9 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">仪表盘</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Qwerty Learner 数据概览</p>
       </div>
-
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {loading
-          ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
+          ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
           : cards.map((card) => <StatCard key={card.title} {...card} />)}
       </div>
     </div>

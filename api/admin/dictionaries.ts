@@ -1,7 +1,7 @@
+import { checkAuth } from './auth'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import fs from 'fs'
 import path from 'path'
-import { checkAuth } from './auth'
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')

@@ -1,11 +1,14 @@
 import { useAdminAuth } from './hooks'
-import { BookOpen, Info, LayoutDashboard, LogOut, Menu, X } from 'lucide-react'
+import { BookOpen, FileText, Heart, Inbox, Info, LayoutDashboard, LogOut, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Navigate, Outlet } from 'react-router-dom'
 
 const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: '仪表盘', end: true },
-  { to: '/admin/dictionaries', icon: BookOpen, label: '词典管理', end: false },
+  { to: '/admin/dictionaries', icon: BookOpen, label: '词本管理', end: false },
+  { to: '/admin/phrases', icon: FileText, label: '短句管理', end: false },
+  { to: '/admin/favorites', icon: Heart, label: '收藏管理', end: false },
+  { to: '/admin/submissions', icon: Inbox, label: '投稿审核', end: false },
   { to: '/admin/about', icon: Info, label: '关于', end: true },
 ]
 
@@ -19,12 +22,8 @@ export default function AdminLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
+      {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
-      {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white shadow-xl transition-transform duration-200 dark:bg-gray-900 lg:static lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -38,12 +37,15 @@ export default function AdminLayout() {
             <h2 className="text-sm font-bold text-gray-900 dark:text-white">Qwerty Learner</h2>
             <p className="text-xs text-gray-500 dark:text-gray-400">管理后台</p>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="rounded-lg p-1 text-gray-400 hover:text-gray-600 lg:hidden dark:hover:text-gray-200">
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 lg:hidden"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -75,14 +77,12 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top bar */}
         <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 lg:px-8">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 lg:hidden dark:hover:bg-gray-800 dark:hover:text-gray-200"
+              className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200 lg:hidden"
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -90,14 +90,13 @@ export default function AdminLayout() {
           </div>
           <button
             onClick={logout}
-            className="hidden items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 sm:inline-flex dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="hidden items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 sm:inline-flex"
           >
             <LogOut className="h-4 w-4" />
             退出
           </button>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
           <Outlet />
         </main>
