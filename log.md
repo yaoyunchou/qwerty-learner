@@ -2,6 +2,70 @@
 
 ## 2026-05-06
 
+### 后台与练习前台切换入口
+
+- `src/pages/Admin/index.tsx`：侧栏顶部新增「练习首页（前台）」链接（高亮样式），顶栏右侧新增「练习首页」主按钮，均跳转 `/` 回到打字练习首页；登录态保留，无需退出即可继续背单词
+- `src/pages/Admin/Login.tsx`：表单底部增加「← 返回练习首页」，未登录也可直接回到前台
+- `src/components/Footer/index.tsx`：已登录时页脚「管理后台」跳转到 `/admin`，未登录时文案为「登录 / 后台」并仍进入 `/admin/login`
+
+### 渐进式认证 + Google 登录 + 品牌清理
+
+**Supabase 新增学习记录表：**
+
+- 创建 `cloud_word_records` 和 `cloud_chapter_records` 两张表，存储用户级别的单词练习和章节练习数据
+- 启用 RLS，策略 `auth.uid() = user_id`，仅允许用户操作自己的数据
+- 添加 `(user_id, created_at DESC)` 复合索引，加速按时间段查询
+
+**双写机制（本地 + 云端）：**
+
+- `src/utils/db/index.ts`：`useSaveWordRecord` 和 `useSaveChapterRecord` 修改为双写模式 — 始终写入本地 IndexedDB，登录用户额外异步写入 Supabase 云端表
+- 云端写入失败不影响本地保存，仅 console.error 输出
+
+**首次登录数据迁移：**
+
+- 新建 `src/utils/db/cloud-sync.ts`：`syncLocalToCloudIfNeeded()` 函数
+- 登录时自动检查本地 IndexedDB 是否有历史数据，有则分批（300 条/批）上传到云端
+- 使用 `localStorage` 标记 `cloud_initial_sync_done`，每个用户仅迁移一次
+- 在 `src/store/authAtom.ts` 的 `attachAuthListener` 中，`SIGNED_IN` 事件触发自动迁移
+
+**统计页面云端数据支持：**
+
+- `src/pages/Analysis/hooks/useWordStats.ts` 重构：登录用户从 Supabase `cloud_word_records` 查询，未登录用户继续读本地 IndexedDB
+- `src/pages/Analysis/index.tsx`：新增未登录提示横幅（"登录后可查看云端历史记录"）和云端数据标识
+
+**Google 登录：**
+
+- `src/hooks/useAuth.ts`：新增 `signInWithGoogle()` 方法（Supabase OAuth）
+- `src/pages/Admin/Login.tsx`：登录页新增 Google 彩色 logo 按钮 + 分隔线
+- 注意：需在 Supabase Dashboard → Authentication → Providers → Google 中配置 Client ID 和 Secret
+
+**Header 登录入口：**
+
+- `src/components/Header/index.tsx`：右侧导航栏新增登录/用户按钮
+- 未登录：显示"登录"按钮
+- 已登录：显示用户头像首字母 + "我的"链接，点击进入管理后台
+
+**未登录引导提示：**
+
+- `ResultScreen/index.tsx`：章节完成界面，未登录用户显示"登录以同步练习记录到云端"按钮
+- `FavoriteButton.tsx`：未登录时点击收藏按钮跳转到登录页（不再隐藏按钮）
+
+**品牌清理：**
+
+- `src/components/Footer/index.tsx`：移除原作者品牌、社交媒体链接、捐赠入口、ICP 备案号、Gitee 镜像链接，替换为简洁的"管理后台"链接 + 通用版权信息
+- `src/components/Header/index.tsx`：Logo 链接从 `https://qwerty.kaiyi.cool/` 改为 `/`
+- `ResultScreen/index.tsx`：移除 AuthorButton、社交媒体图标（GitHub/微信/小红书/打赏）等
+- `src/pages/Typing/index.tsx`：移除 DonateCard 组件
+- `src/pages/Mobile/index.tsx`：所有 `https://qwerty.kaiyi.cool/` 替换为 `/`
+
+### 合并到 master 并推送
+
+- 将 `cursor/vercel-output-directory-4309` 分支的所有 Supabase 集成工作合并到 `master`
+- 解决了 3 个合并冲突（`.gitignore`、`package.json`、`vercel.json`）
+- 保留了 master 上较新的依赖版本，同时合入 `@supabase/supabase-js`、`@typescript-eslint/*`、`@vercel/node`
+- `vercel.json` 统一为 `outputDirectory: "dist"` + API rewrites + SPA fallback
+- `.eslintignore` 和 `.prettierignore` 均新增 `dist` 目录排除，避免 pre-commit hook 扫描构建产物报错
+
 ### `.gitignore` 增加 `dist/`
 
 项目默认构建输出目录为 `build/`（见 `vite.config.ts`），此前 `.gitignore` 仅忽略 `build/`。若本地出现 `dist/`（例如使用 Vite 默认输出或其它构建流程），Git 会一直显示大量未跟踪文件。已在 `.gitignore` 中加入 `/dist`，与产物不入库的实践一致。

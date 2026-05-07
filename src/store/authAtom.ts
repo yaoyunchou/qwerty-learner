@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { syncLocalToCloudIfNeeded } from '@/utils/db/cloud-sync'
 import type { Session } from '@supabase/supabase-js'
 import { atom } from 'jotai'
 
@@ -15,9 +16,19 @@ export function attachAuthListener(setSession: (s: Session | null) => void) {
 
   supabase.auth.getSession().then(({ data }) => {
     setSession(data.session)
+    if (data.session?.user) {
+      syncLocalToCloudIfNeeded(data.session.user.id).then((result) => {
+        if (result) console.log(`[cloud-sync] migrated ${result.wordCount} words, ${result.chapterCount} chapters`)
+      })
+    }
   })
 
   supabase.auth.onAuthStateChange((_event, session) => {
     setSession(session)
+    if (_event === 'SIGNED_IN' && session?.user) {
+      syncLocalToCloudIfNeeded(session.user.id).then((result) => {
+        if (result) console.log(`[cloud-sync] migrated ${result.wordCount} words, ${result.chapterCount} chapters`)
+      })
+    }
   })
 }

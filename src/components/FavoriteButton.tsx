@@ -5,6 +5,7 @@ import type { Word } from '@/typings'
 import { useAtomValue } from 'jotai'
 import { Heart } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 interface FavoriteButtonProps {
   word: Word
@@ -13,11 +14,15 @@ interface FavoriteButtonProps {
 export default function FavoriteButton({ word }: FavoriteButtonProps) {
   const isLoggedIn = useAtomValue(isLoggedInAtom)
   const dictId = useAtomValue(currentDictIdAtom)
+  const navigate = useNavigate()
   const [isFav, setIsFav] = useState(false)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!isLoggedIn || !word.name) return
+    if (!isLoggedIn || !word.name) {
+      setIsFav(false)
+      return
+    }
     let cancelled = false
 
     supabase
@@ -40,8 +45,13 @@ export default function FavoriteButton({ word }: FavoriteButtonProps) {
       e.stopPropagation()
       e.preventDefault()
       if (loading) return
-      setLoading(true)
 
+      if (!isLoggedIn) {
+        navigate('/admin/login')
+        return
+      }
+
+      setLoading(true)
       try {
         if (isFav) {
           await supabase.from('user_favorites').delete().eq('word_name', word.name).eq('source_dict', dictId)
@@ -62,10 +72,8 @@ export default function FavoriteButton({ word }: FavoriteButtonProps) {
         setLoading(false)
       }
     },
-    [isFav, loading, word, dictId],
+    [isLoggedIn, isFav, loading, word, dictId, navigate],
   )
-
-  if (!isLoggedIn) return null
 
   return (
     <button
@@ -74,7 +82,7 @@ export default function FavoriteButton({ word }: FavoriteButtonProps) {
       className={`ml-2 inline-flex items-center rounded-full p-1.5 transition-colors ${
         isFav ? 'text-pink-500 hover:text-pink-600' : 'text-gray-300 hover:text-pink-400 dark:text-gray-600 dark:hover:text-pink-400'
       } ${loading ? 'opacity-50' : ''}`}
-      title={isFav ? '取消收藏' : '收藏'}
+      title={isLoggedIn ? (isFav ? '取消收藏' : '收藏') : '登录后可收藏'}
     >
       <Heart className={`h-5 w-5 ${isFav ? 'fill-current' : ''}`} />
     </button>
