@@ -34,6 +34,14 @@
 
 **部署注意：** 需配置 `SUPABASE_SERVICE_ROLE_KEY` 与 `SITE_URL`；执行新 migration；MCP 配置见 `README.md` MCP 章节。周聚合 Cron 需 Vercel Pro，可在 Dashboard 手动配置 `/api/cron/weekly-snapshot`。
 
+### 修复 Vercel Hobby 12 函数上限导致部署失败
+
+- 合并 `api/auth/*` → `api/auth.ts?action=`
+- 合并 `api/stats/*` → `api/stats.ts?report=`
+- 合并 `api/plans/[id]/*` → `api/plans/[id].ts`（GET today / POST complete）
+- 移除 `api/cron/weekly-snapshot.ts`（Hobby 不支持 cron）
+- 前端 `apiClient` 同步更新路径
+
 ### 修复 Vercel 部署失败（移除 Hobby 不支持的 cron 配置）
 
 - `vercel.json` 移除 `crons` 块（Hobby 计划会导致部署失败）

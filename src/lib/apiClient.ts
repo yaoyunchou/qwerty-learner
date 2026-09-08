@@ -66,27 +66,28 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 }
 
 export async function loginWithApiKey(apiKey: string) {
-  return apiFetch<{ userId: string; keyPrefix: string }>('/api/auth/login', {
+  return apiFetch<{ userId: string; keyPrefix: string }>('/api/auth?action=login', {
     method: 'POST',
     body: JSON.stringify({ apiKey }),
   })
 }
 
 export async function createApiKey() {
-  return apiFetch<{ userId: string; apiKey: string; warning: string }>('/api/auth/create-key', {
+  return apiFetch<{ userId: string; apiKey: string; warning: string }>('/api/auth?action=create-key', {
     method: 'POST',
   })
 }
 
 export async function bindRecoveryEmail(email: string) {
-  return apiFetch<{ ok: boolean }>('/api/auth/bind-email', {
+  return apiFetch<{ ok: boolean }>('/api/auth?action=bind-email', {
     method: 'POST',
     body: JSON.stringify({ email }),
   })
 }
 
 export async function fetchPlanToday(planId: string, date?: string) {
-  const qs = date ? `?date=${date}` : ''
+  const qs = new URLSearchParams({ action: 'today' })
+  if (date) qs.set('date', date)
   return apiFetch<{
     planId: string
     date: string
@@ -94,15 +95,11 @@ export async function fetchPlanToday(planId: string, date?: string) {
     breakdown: { new: number; review: number }
     practiceUrl: string
     completed: boolean
-  }>(`/api/plans/${planId}/today${qs}`)
+  }>(`/api/plans/${planId}?${qs.toString()}`)
 }
 
-export async function completePlanDay(
-  planId: string,
-  date: string,
-  stats?: Record<string, unknown>,
-) {
-  return apiFetch<{ ok: boolean }>(`/api/plans/${planId}/complete`, {
+export async function completePlanDay(planId: string, date: string, stats?: Record<string, unknown>) {
+  return apiFetch<{ ok: boolean }>(`/api/plans/${planId}`, {
     method: 'POST',
     body: JSON.stringify({ action: 'complete', date, stats }),
   })
@@ -123,17 +120,18 @@ export async function recordPlanWord(
     sessionId?: string
   },
 ) {
-  return apiFetch(`/api/plans/${planId}/complete`, {
+  return apiFetch(`/api/plans/${planId}`, {
     method: 'POST',
     body: JSON.stringify({ action: 'word', ...payload }),
   })
 }
 
 export async function fetchStatsSummary() {
-  return apiFetch('/api/stats/summary')
+  return apiFetch('/api/stats?report=summary')
 }
 
 export async function fetchDailyReport(date?: string) {
-  const qs = date ? `?date=${date}` : ''
-  return apiFetch(`/api/stats/daily${qs}`)
+  const qs = new URLSearchParams({ report: 'daily' })
+  if (date) qs.set('date', date)
+  return apiFetch(`/api/stats?${qs.toString()}`)
 }
