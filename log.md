@@ -47,6 +47,16 @@
 - `vercel.json` 移除 `crons` 块（Hobby 计划会导致部署失败）
 - 移除 `functions` 通配配置，恢复与旧版一致的 SPA + API 路由
 
+### 修复 Vercel 部署失败（api/auth.ts 错误导入路径）
+
+**根因：** 合并 `api/auth/*` 为 `api/auth.ts` 时，保留了子目录里的 `../_lib/*` 导入。文件上移到 `api/` 后应使用 `./_lib/*`，导致 Serverless 函数打包失败、整次部署失败。
+
+**修复：**
+
+- `api/auth.ts`：`../_lib/*` → `./_lib/*`
+- 恢复完整 `api/mcp/index.ts`（移除诊断用 stub）
+- 删除空的 `api/auth/`、`api/cron/`、`api/stats/` 目录
+
 ### MCP 首次绑定与 AI 提示词
 
 - 新增 `check_setup` 工具：检查 API Key 是否已配置，未配置返回 `needs_create_user`

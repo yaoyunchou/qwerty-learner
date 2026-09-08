@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { AuthError, bindRecoveryEmail, createUserWithKey, loginWithKey, validateApiKey } from '../_lib/auth'
-import { handleOptions, json } from '../_lib/http'
-import { isSupabaseConfigured } from '../_lib/supabase'
+import { AuthError, bindRecoveryEmail, createUserWithKey, loginWithKey, validateApiKey } from './_lib/auth'
+import { handleOptions, json } from './_lib/http'
+import { isSupabaseConfigured } from './_lib/supabase'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return
