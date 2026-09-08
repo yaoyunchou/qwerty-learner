@@ -1,5 +1,19 @@
 # 变更记录
 
+## 2026-09-08
+
+### 修复 Vercel 白屏（Supabase 环境变量缺失）
+
+**问题：** Vercel 生产环境未配置 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` 时，`@supabase/supabase-js` 在 `createClient('', '')` 阶段抛出 `supabaseUrl is required`，导致整站白屏（HTML 200 但 React 未挂载）。
+
+**修复：**
+
+- `src/lib/supabase.ts`：仅在环境变量齐全时初始化 Supabase Client，导出 `isSupabaseConfigured`；缺失时仅 `console.warn`，不阻断前台练习
+- `src/store/authAtom.ts`：`attachAuthListener` 在未配置 Supabase 时直接返回，避免启动期访问 `supabase.auth`
+- `src/hooks/useAuth.ts`：登录/注册/Google 登录在未配置时给出明确错误提示
+
+**部署注意：** 云端登录、词库同步、收藏等能力仍需在 Vercel 项目 Settings → Environment Variables 中配置上述两个变量（值来自 Supabase Dashboard → Project Settings → API）。
+
 ## 2026-05-06
 
 ### 后台与练习前台切换入口
