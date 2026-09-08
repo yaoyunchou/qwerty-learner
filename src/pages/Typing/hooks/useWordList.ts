@@ -1,5 +1,6 @@
 import { CHAPTER_LENGTH } from '@/constants'
 import { currentChapterAtom, currentDictInfoAtom, reviewModeInfoAtom } from '@/store'
+import { planPracticeAtom } from '@/store/planPracticeAtom'
 import type { Word, WordWithIndex } from '@/typings/index'
 import { wordListFetcher } from '@/utils/wordListFetcher'
 import { useAtom, useAtomValue } from 'jotai'
@@ -16,6 +17,7 @@ export type UseWordListResult = {
  * Use word lists from the current selected dictionary.
  */
 export function useWordList(): UseWordListResult {
+  const planPractice = useAtomValue(planPracticeAtom)
   const currentDictInfo = useAtomValue(currentDictInfoAtom)
   const [currentChapter, setCurrentChapter] = useAtom(currentChapterAtom)
   const { isReviewMode, reviewRecord } = useAtomValue(reviewModeInfoAtom)
@@ -25,12 +27,15 @@ export function useWordList(): UseWordListResult {
     setCurrentChapter(0)
   }
 
-  const isFirstChapter = !isReviewMode && currentDictInfo.id === 'cet4' && currentChapter === 0
-  const { data: wordList, error, isLoading } = useSWR(currentDictInfo.url, wordListFetcher)
+  const isFirstChapter = !isReviewMode && !planPractice && currentDictInfo.id === 'cet4' && currentChapter === 0
+  const swrKey = planPractice ? `plan://${planPractice.planId}?date=${planPractice.date}` : currentDictInfo.url
+  const { data: wordList, error, isLoading } = useSWR(swrKey, wordListFetcher)
 
   const words: WordWithIndex[] = useMemo(() => {
     let newWords: Word[]
-    if (isFirstChapter) {
+    if (planPractice?.words?.length) {
+      newWords = planPractice.words
+    } else if (isFirstChapter) {
       newWords = firstChapter
     } else if (isReviewMode) {
       newWords = reviewRecord?.words ?? []
@@ -56,7 +61,7 @@ export function useWordList(): UseWordListResult {
         trans,
       }
     })
-  }, [isFirstChapter, isReviewMode, wordList, reviewRecord?.words, currentChapter])
+  }, [isFirstChapter, isReviewMode, wordList, reviewRecord?.words, currentChapter, planPractice])
 
   return { words, isLoading, error }
 }

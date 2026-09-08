@@ -59,6 +59,49 @@ GitHub Pages: <https://realkai42.github.io/qwerty-learner/>
 2. 若在 Vercel 控制台曾勾选 **Override**，请关闭或与上述一致，否则仓库内配置可能被覆盖。
 3. Click Deploy Button
 
+#### MCP 远程接入（AI 工具）
+
+部署后可通过 **Streamable HTTP MCP** 让 Cursor、Claude Desktop 等 AI 工具管理学习计划与读取学习数据。
+
+**环境变量（Vercel）：**
+
+- `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`：服务端 API 与 MCP 必需
+- `CRON_SECRET`（可选）：保护 `/api/cron/weekly-snapshot` 周聚合任务
+
+**数据库：** 在 Supabase SQL Editor 执行 `supabase/migrations/20260908100000_mcp_users_and_plans.sql`
+
+**创建用户：** 调用 MCP tool `create_user` 或 `POST /api/auth/create-key`，保存返回的 `ql_` 前缀 API Key（仅展示一次）。
+
+**客户端配置示例（`.mcp.json` 或 Cursor MCP 设置）：**
+
+```json
+{
+  "mcpServers": {
+    "qwerty-learner": {
+      "url": "https://YOUR_DEPLOYMENT.vercel.app/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ql_YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
+**主要 MCP Tools：**
+
+| Tool | 说明 |
+|------|------|
+| `create_user` | 创建用户并返回 API Key |
+| `list_dictionaries` | 列出词库 |
+| `create_study_plan` | 创建学习计划 |
+| `get_daily_plan` | 获取某日词单 + 练习链接 |
+| `suggest_today_words` | 智能今日词单（SRS 复习 + 新词） |
+| `get_daily_report` / `get_weekly_report` | 日/周学习报告 |
+| `get_memory_overview` | 记忆状态全景 |
+| `get_plan_progress` | 计划进度 |
+
+**网页端：** 访问 `/login` 使用 API Key 登录；AI 返回的 `practiceUrl` 可直接打开 `/practice/plan/:id` 开始练习。
+
 <br />
 
 ## ✨ 设计思想
