@@ -56,6 +56,7 @@
 - 将 `api/_lib/` 移至项目根目录 `server/`，仅 `api/*.ts` 保留为入口
 - 同步更新 `api/auth.ts`、`api/stats.ts`、`api/plans/[id].ts`、`api/mcp/index.ts` 的导入路径
 - `vercel.json` 移除 `installCommand`（与上次成功部署配置一致）
+- `@vercel/node` 移回 `devDependencies`，避免运行时打包冲突导致 `FUNCTION_INVOCATION_FAILED`
 
 ### 修复 Vercel 部署失败（api/auth.ts 错误导入路径）
 
