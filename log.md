@@ -34,6 +34,8 @@
 3. 运行 `scripts/verify-supabase.sql` 确认 8 张表与 RLS 已启用
 4. 复制 Project URL / anon key 到 Vercel：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`，重新部署
 
+**Cloud Agent 自动激活脚本：** `scripts/supabase-activate.sh`（需环境变量 `SUPABASE_ACCESS_TOKEN` + `SUPABASE_PROJECT_REF`，可写入 Cloud Environment Secrets，无需手动点 Restore）
+
 ## 2026-05-06
 
 ### 后台与练习前台切换入口
