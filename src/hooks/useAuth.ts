@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { attachAuthListener, currentUserAtom, isLoggedInAtom, sessionAtom } from '@/store/authAtom'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useCallback, useEffect } from 'react'
@@ -16,11 +16,13 @@ export function useAuth() {
   const user = useAtomValue(currentUserAtom)
 
   const signIn = useCallback(async (email: string, password: string) => {
+    if (!isSupabaseConfigured) throw new Error('云端登录未配置，请在 Vercel 设置 VITE_SUPABASE_URL 与 VITE_SUPABASE_ANON_KEY')
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
   }, [])
 
   const signUp = useCallback(async (email: string, password: string, nickname?: string) => {
+    if (!isSupabaseConfigured) throw new Error('云端登录未配置，请在 Vercel 设置 VITE_SUPABASE_URL 与 VITE_SUPABASE_ANON_KEY')
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -30,6 +32,7 @@ export function useAuth() {
   }, [])
 
   const signInWithGoogle = useCallback(async () => {
+    if (!isSupabaseConfigured) throw new Error('云端登录未配置，请在 Vercel 设置 VITE_SUPABASE_URL 与 VITE_SUPABASE_ANON_KEY')
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin + '/admin' },
@@ -38,6 +41,7 @@ export function useAuth() {
   }, [])
 
   const signOut = useCallback(async () => {
+    if (!isSupabaseConfigured) return
     await supabase.auth.signOut()
   }, [])
 

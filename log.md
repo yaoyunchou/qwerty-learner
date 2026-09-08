@@ -1,5 +1,41 @@
 # 变更记录
 
+## 2026-09-08
+
+### 修复 Vercel 白屏（Supabase 环境变量缺失）
+
+**问题：** Vercel 生产环境未配置 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` 时，`@supabase/supabase-js` 在 `createClient('', '')` 阶段抛出 `supabaseUrl is required`，导致整站白屏（HTML 200 但 React 未挂载）。
+
+**修复：**
+
+- `src/lib/supabase.ts`：仅在环境变量齐全时初始化 Supabase Client，导出 `isSupabaseConfigured`；缺失时仅 `console.warn`，不阻断前台练习
+- `src/store/authAtom.ts`：`attachAuthListener` 在未配置 Supabase 时直接返回，避免启动期访问 `supabase.auth`
+- `src/hooks/useAuth.ts`：登录/注册/Google 登录在未配置时给出明确错误提示
+
+**部署注意：** 云端登录、词库同步、收藏等能力仍需在 Vercel 项目 Settings → Environment Variables 中配置上述两个变量（值来自 Supabase Dashboard → Project Settings → API）。
+
+### Supabase 数据库激活（Schema + 配置）
+
+**背景：** 仓库此前仅有 Edge Function，缺少可执行的 migration；Vercel 也未注入 Supabase 环境变量，导致云端能力不可用。
+
+**新增：**
+
+- `supabase/migrations/20260508100000_init_schema.sql`：8 张业务表 + RLS + `profiles` 注册触发器
+  - `profiles`、`user_wordbooks`、`wordbook_items`、`user_favorites`、`user_phrases`、`word_submissions`、`cloud_word_records`、`cloud_chapter_records`
+- `supabase/config.toml`：本地 CLI 基础配置（含 Vercel 管理后台 OAuth 回调 URL）
+- `.env.example`：前端与 Edge Function 所需环境变量模板
+- `.mcp.json`：Supabase MCP 连接配置（需在 Cursor 桌面端完成 OAuth）
+- `scripts/verify-supabase.sql`：建表后健康检查脚本
+
+**激活步骤（需在 Supabase Dashboard 手动执行）：**
+
+1. 若项目显示 **Paused**，先点 **Restore project** 恢复为 Active
+2. SQL Editor 粘贴并运行 `supabase/migrations/20260508100000_init_schema.sql`
+3. 运行 `scripts/verify-supabase.sql` 确认 8 张表与 RLS 已启用
+4. 复制 Project URL / anon key 到 Vercel：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`，重新部署
+
+**Cloud Agent 自动激活脚本：** `scripts/supabase-activate.sh`（需环境变量 `SUPABASE_ACCESS_TOKEN` + `SUPABASE_PROJECT_REF`，可写入 Cloud Environment Secrets，无需手动点 Restore）
+
 ## 2026-05-06
 
 ### 后台与练习前台切换入口

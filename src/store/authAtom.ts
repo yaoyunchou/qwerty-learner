@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { syncLocalToCloudIfNeeded } from '@/utils/db/cloud-sync'
 import type { Session } from '@supabase/supabase-js'
 import { atom } from 'jotai'
@@ -13,6 +13,7 @@ let _listenerAttached = false
 export function attachAuthListener(setSession: (s: Session | null) => void) {
   if (_listenerAttached) return
   _listenerAttached = true
+  if (!isSupabaseConfigured) return
 
   supabase.auth.getSession().then(({ data }) => {
     setSession(data.session)
