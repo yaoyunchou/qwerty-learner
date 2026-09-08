@@ -9,7 +9,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const action = String(req.query.action ?? '')
   if (!action) return json(res, 400, { error: 'Missing action query. Use create-key | login | bind-email' })
 
-  if (!isSupabaseConfigured() && action !== 'login') {
+  if (!isSupabaseConfigured()) {
     return json(res, 500, { error: 'Server misconfigured: Supabase service role not set' })
   }
 
