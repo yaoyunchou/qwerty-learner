@@ -57,6 +57,7 @@
 - 同步更新 `api/auth.ts`、`api/stats.ts`、`api/plans/[id].ts`、`api/mcp/index.ts` 的导入路径
 - `vercel.json` 移除 `installCommand`（与上次成功部署配置一致）
 - `@vercel/node` 移回 `devDependencies`，避免运行时打包冲突导致 `FUNCTION_INVOCATION_FAILED`
+- 新增 `scripts/build-api.cjs`：Vercel 构建时将 `api` 下带 `export default` 的 `.ts` 打成 `.js`（`.ts` 入口在 Hobby 上会崩溃）
 
 ### 修复 Vercel 部署失败（api/auth.ts 错误导入路径）
 

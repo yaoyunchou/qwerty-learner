@@ -72,7 +72,7 @@
   "scripts": {
     "dev": "bash scripts/with-node-path.sh node ./node_modules/vite/bin/vite.js",
     "start": "bash scripts/with-node-path.sh node ./node_modules/vite/bin/vite.js",
-    "build": "bash scripts/with-node-path.sh node ./node_modules/cross-env/src/bin/cross-env.js CI=false node ./node_modules/vite/bin/vite.js build",
+    "build": "bash scripts/with-node-path.sh node ./node_modules/cross-env/src/bin/cross-env.js CI=false node ./node_modules/vite/bin/vite.js build && node scripts/build-api.cjs",
     "test": "echo \"No tests\"",
     "test:e2e": "playwright test",
     "lint": "eslint .",
