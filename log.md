@@ -32,7 +32,12 @@
 
 **依赖：** `@modelcontextprotocol/sdk`、`bcryptjs`、`zod`
 
-**部署注意：** 需配置 `SUPABASE_SERVICE_ROLE_KEY` 与 `SITE_URL`；执行新 migration；MCP 配置见 `README.md` MCP 章节。
+**部署注意：** 需配置 `SUPABASE_SERVICE_ROLE_KEY` 与 `SITE_URL`；执行新 migration；MCP 配置见 `README.md` MCP 章节。周聚合 Cron 需 Vercel Pro，可在 Dashboard 手动配置 `/api/cron/weekly-snapshot`。
+
+### 修复 Vercel 部署失败（移除 Hobby 不支持的 cron 配置）
+
+- `vercel.json` 移除 `crons` 块（Hobby 计划会导致部署失败）
+- 移除 `functions` 通配配置，恢复与旧版一致的 SPA + API 路由
 
 ### MCP 首次绑定与 AI 提示词
 
