@@ -43,7 +43,7 @@ function prioritizeWords(words: WordEntry[], focusWords?: string[]): WordEntry[]
   return [...shuffle(focused), ...shuffle(rest)]
 }
 
-export async function createStudyPlan(input: CreatePlanInput) {
+export async function createStudyPlan(input: CreatePlanInput, apiKey?: string) {
   const meta = getDictionaryMeta(input.dictId)
   if (!meta) throw new Error(`Dictionary not found: ${input.dictId}`)
 
@@ -91,12 +91,17 @@ export async function createStudyPlan(input: CreatePlanInput) {
   const { error: daysErr } = await db.from('study_plan_days').insert(dayRows)
   if (daysErr) throw new Error(daysErr.message)
 
+  const startLearningUrl = practicePlanUrl(plan.id, startDate, apiKey)
+
   return {
     planId: plan.id,
     title: input.title || `${meta.name} ${input.totalDays}天计划`,
     totalDays: input.totalDays,
     wordsPerDay: input.wordsPerDay,
     startDate,
+    practiceUrl: startLearningUrl,
+    startLearningUrl,
+    siteUrl: practicePlanUrl(plan.id).split('/practice')[0],
     days: dayRows.map((d) => ({
       dayIndex: d.day_index,
       scheduledDate: d.scheduled_date,
@@ -118,7 +123,7 @@ export async function getPlanForUser(planId: string, userId: string) {
   return data
 }
 
-export async function getDailyPlan(planId: string, userId: string, date?: string) {
+export async function getDailyPlan(planId: string, userId: string, date?: string, apiKey?: string) {
   const plan = await getPlanForUser(planId, userId)
   const targetDate = date ?? todayStr()
   const db = getServiceSupabase()
@@ -158,11 +163,17 @@ export async function getDailyPlan(planId: string, userId: string, date?: string
     completed: Boolean(dayRow?.completed_at),
     words: combined,
     breakdown,
-    practiceUrl: practicePlanUrl(planId, targetDate),
+    practiceUrl: practicePlanUrl(planId, targetDate, apiKey),
+    startLearningUrl: practicePlanUrl(planId, targetDate, apiKey),
   }
 }
 
-export async function suggestTodayWords(userId: string, planId?: string, wordsPerDay?: number) {
+export async function suggestTodayWords(
+  userId: string,
+  planId?: string,
+  wordsPerDay?: number,
+  apiKey?: string,
+) {
   const db = getServiceSupabase()
   let plan = null
 
@@ -208,7 +219,8 @@ export async function suggestTodayWords(userId: string, planId?: string, wordsPe
     date: today,
     words,
     breakdown: { new: newWords.length, review: dueReviews.length },
-    practiceUrl: practicePlanUrl(plan.id, today),
+    practiceUrl: practicePlanUrl(plan.id, today, apiKey),
+    startLearningUrl: practicePlanUrl(plan.id, today, apiKey),
   }
 }
 

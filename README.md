@@ -66,6 +66,7 @@ GitHub Pages: <https://realkai42.github.io/qwerty-learner/>
 **环境变量（Vercel）：**
 
 - `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`：服务端 API 与 MCP 必需
+- `SITE_URL`：生产站点地址（默认 `https://qwerty-learner-3z4e.vercel.app`），MCP 返回的 `startLearningUrl` 会指向此域名
 - `CRON_SECRET`（可选）：保护 `/api/cron/weekly-snapshot` 周聚合任务
 
 **数据库：** 在 Supabase SQL Editor 执行 `supabase/migrations/20260908100000_mcp_users_and_plans.sql`
@@ -100,7 +101,7 @@ GitHub Pages: <https://realkai42.github.io/qwerty-learner/>
 | `get_memory_overview` | 记忆状态全景 |
 | `get_plan_progress` | 计划进度 |
 
-**网页端：** 访问 `/login` 使用 API Key 登录；AI 返回的 `practiceUrl` 可直接打开 `/practice/plan/:id` 开始练习。
+**网页端：** 访问 `/login` 使用 API Key 登录。MCP 创建计划后返回的 `startLearningUrl` 会跳转到您的网站并自动登录、加载当日词单（链接内含一次性 key 参数，登录后自动清除）。
 
 <br />
 

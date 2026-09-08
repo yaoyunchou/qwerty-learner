@@ -2,7 +2,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import * as z from 'zod'
-import { AuthError, createUserWithKey, getSaveKeyWarning, validateApiKey } from './auth'
+import { AuthError, createUserWithKey, extractBearer, getSaveKeyWarning, validateApiKey } from './auth'
+import { getSiteOrigin, practicePlanUrl } from './http'
 import { listDictionaries } from './dictionaries'
 import { bindRecoveryEmail } from './auth'
 import {
@@ -23,7 +24,7 @@ import {
   getWordDetail,
 } from './stats-queries'
 
-type AuthContext = { userId: string } | null
+type AuthContext = { userId: string; plainKey?: string } | null
 
 function createServer(auth: AuthContext) {
   const server = new McpServer({ name: 'qwerty-learner', version: '1.0.0' })
@@ -36,12 +37,19 @@ function createServer(auth: AuthContext) {
     },
     async () => {
       const result = await createUserWithKey()
+      const loginUrl = `${getSiteOrigin()}/login?key=${encodeURIComponent(result.apiKey)}`
       return {
         content: [
           {
             type: 'text',
             text: JSON.stringify(
-              { apiKey: result.apiKey, userId: result.userId, warning: result.warning },
+              {
+                apiKey: result.apiKey,
+                userId: result.userId,
+                warning: result.warning,
+                loginUrl,
+                siteUrl: getSiteOrigin(),
+              },
               null,
               2,
             ),
@@ -82,8 +90,8 @@ function createServer(auth: AuthContext) {
       },
     },
     async (input) => {
-      const { userId } = requireAuth(auth)
-      const result = await createStudyPlan({ userId, ...input })
+      const { userId, plainKey } = requireAuth(auth)
+      const result = await createStudyPlan({ userId, ...input }, plainKey)
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
     },
   )
@@ -98,8 +106,8 @@ function createServer(auth: AuthContext) {
       },
     },
     async ({ planId, date }) => {
-      const { userId } = requireAuth(auth)
-      const result = await getDailyPlan(planId, userId, date)
+      const { userId, plainKey } = requireAuth(auth)
+      const result = await getDailyPlan(planId, userId, date, plainKey)
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
     },
   )
@@ -114,8 +122,8 @@ function createServer(auth: AuthContext) {
       },
     },
     async (input) => {
-      const { userId } = requireAuth(auth)
-      const result = await suggestTodayWords(userId, input.planId, input.wordsPerDay)
+      const { userId, plainKey } = requireAuth(auth)
+      const result = await suggestTodayWords(userId, input.planId, input.wordsPerDay, plainKey)
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
     },
   )
@@ -230,7 +238,7 @@ function createServer(auth: AuthContext) {
   return server
 }
 
-function requireAuth(auth: AuthContext): { userId: string } {
+function requireAuth(auth: AuthContext): { userId: string; plainKey?: string } {
   if (!auth) throw new Error('Authorization required. Use Bearer ql_xxx API key.')
   return auth
 }
@@ -238,8 +246,10 @@ function requireAuth(auth: AuthContext): { userId: string } {
 export async function handleMcpRequest(req: VercelRequest, res: VercelResponse) {
   let auth: AuthContext = null
   try {
-    if (req.headers.authorization) {
-      auth = await validateApiKey(req)
+    const plainKey = extractBearer(req)
+    if (plainKey) {
+      const validated = await validateApiKey(req)
+      auth = { userId: validated.userId, plainKey }
     }
   } catch {
     auth = null

@@ -20,11 +20,23 @@ export function json(res: VercelResponse, status: number, body: unknown) {
   res.status(status).json(body)
 }
 
+const DEFAULT_SITE_URL = 'https://qwerty-learner-3z4e.vercel.app'
+
 export function getSiteOrigin(): string {
-  return process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:5173'
+  const configured = process.env.SITE_URL || process.env.PUBLIC_SITE_URL || process.env.VITE_SITE_URL
+  if (configured) return configured.replace(/\/$/, '')
+  if (process.env.VERCEL_ENV === 'production' && process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+  if (process.env.NODE_ENV === 'production') return DEFAULT_SITE_URL
+  return 'http://localhost:5173'
 }
 
-export function practicePlanUrl(planId: string, date?: string) {
+export function practicePlanUrl(planId: string, date?: string, apiKey?: string) {
   const base = `${getSiteOrigin()}/practice/plan/${planId}`
-  return date ? `${base}?date=${date}` : base
+  const params = new URLSearchParams()
+  if (date) params.set('date', date)
+  if (apiKey?.startsWith('ql_')) params.set('key', apiKey)
+  const qs = params.toString()
+  return qs ? `${base}?${qs}` : base
 }

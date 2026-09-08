@@ -1,14 +1,19 @@
 import { useAuth } from '@/hooks/useAuth'
-import { isLoggedInAtom } from '@/store/authAtom'
-import { useAtomValue } from 'jotai'
+import { ensureApiKeySession } from '@/lib/apiClient'
+import { apiKeyUserAtom, isLoggedInAtom } from '@/store/authAtom'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { Copy, Key, Keyboard, LogIn, Mail, UserPlus } from 'lucide-react'
-import { type FormEvent, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { type FormEvent, useEffect, useState } from 'react'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 
 export default function KeyLogin() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirect = searchParams.get('redirect') ?? '/'
+  const keyFromUrl = searchParams.get('key')
   const { signInWithKey, createKey, bindEmail } = useAuth()
   const isLoggedIn = useAtomValue(isLoggedInAtom)
+  const setApiKeyUser = useSetAtom(apiKeyUserAtom)
 
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [apiKey, setApiKey] = useState('')
@@ -18,9 +23,32 @@ export default function KeyLogin() {
   const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
   const [showBindEmail, setShowBindEmail] = useState(false)
+  const [autoLoggingIn, setAutoLoggingIn] = useState(Boolean(keyFromUrl))
+
+  useEffect(() => {
+    if (!keyFromUrl?.startsWith('ql_') || isLoggedIn) return
+    setAutoLoggingIn(true)
+    ensureApiKeySession(keyFromUrl)
+      .then((result) => {
+        setApiKeyUser({ id: result.userId, keyPrefix: result.keyPrefix })
+        navigate(redirect, { replace: true })
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : '自动登录失败')
+        setAutoLoggingIn(false)
+      })
+  }, [keyFromUrl, isLoggedIn, navigate, redirect, setApiKeyUser])
+
+  if (autoLoggingIn) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-gray-600 dark:text-gray-300">正在登录并跳转学习计划…</p>
+      </div>
+    )
+  }
 
   if (isLoggedIn && !newKey) {
-    return <Navigate to="/" replace />
+    return <Navigate to={redirect} replace />
   }
 
   const handleLogin = async (e: FormEvent) => {
@@ -30,7 +58,7 @@ export default function KeyLogin() {
     setLoading(true)
     try {
       await signInWithKey(apiKey.trim())
-      navigate('/')
+      navigate(redirect)
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败')
     } finally {
@@ -125,7 +153,7 @@ export default function KeyLogin() {
               )}
               <button
                 type="button"
-                onClick={() => navigate('/')}
+                onClick={() => navigate(redirect)}
                 className="w-full rounded-xl bg-indigo-600 py-3 font-medium text-white hover:bg-indigo-700"
               >
                 进入练习

@@ -1,6 +1,8 @@
 const API_KEY_STORAGE = 'ql_api_key'
 const USER_ID_STORAGE = 'ql_user_id'
 const KEY_PREFIX_STORAGE = 'ql_key_prefix'
+const ACTIVE_PLAN_STORAGE = 'ql_active_plan_id'
+const ACTIVE_PLAN_DATE_STORAGE = 'ql_active_plan_date'
 
 export function getStoredApiKey(): string | null {
   return localStorage.getItem(API_KEY_STORAGE)
@@ -24,6 +26,29 @@ export function clearApiKeySession() {
 
 export function getKeyPrefix(): string | null {
   return localStorage.getItem(KEY_PREFIX_STORAGE)
+}
+
+export function setActivePlan(planId: string, date?: string) {
+  localStorage.setItem(ACTIVE_PLAN_STORAGE, planId)
+  if (date) localStorage.setItem(ACTIVE_PLAN_DATE_STORAGE, date)
+}
+
+export function getActivePlan(): { planId: string; date: string } | null {
+  const planId = localStorage.getItem(ACTIVE_PLAN_STORAGE)
+  if (!planId) return null
+  const date = localStorage.getItem(ACTIVE_PLAN_DATE_STORAGE) ?? new Date().toISOString().slice(0, 10)
+  return { planId, date }
+}
+
+export function getPracticePlanPath(planId: string, date?: string) {
+  const d = date ?? new Date().toISOString().slice(0, 10)
+  return `/practice/plan/${planId}?date=${d}`
+}
+
+export async function ensureApiKeySession(apiKey: string) {
+  const result = await loginWithApiKey(apiKey)
+  storeApiKeySession(apiKey, result.userId, result.keyPrefix)
+  return result
 }
 
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {

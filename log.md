@@ -32,7 +32,13 @@
 
 **依赖：** `@modelcontextprotocol/sdk`、`bcryptjs`、`zod`
 
-**部署注意：** 需配置 `SUPABASE_SERVICE_ROLE_KEY`；执行新 migration；MCP 配置见 `README.md` MCP 章节。
+**部署注意：** 需配置 `SUPABASE_SERVICE_ROLE_KEY` 与 `SITE_URL`；执行新 migration；MCP 配置见 `README.md` MCP 章节。
+
+### 学习计划一键跳转网站
+
+- MCP `create_study_plan` / `get_daily_plan` 返回 `startLearningUrl`，指向生产站点并携带 API Key 实现自动登录
+- 练习页 `/practice/plan/:id` 自动关联计划词库；首页显示「继续今日学习计划」入口
+- Vercel 配置 `SITE_URL=https://qwerty-learner-3z4e.vercel.app` 确保链接指向正确域名
 
 ### 修复 Vercel 白屏（Supabase 环境变量缺失）
 

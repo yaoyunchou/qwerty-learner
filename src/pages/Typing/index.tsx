@@ -1,4 +1,5 @@
 import Layout from '../../components/Layout'
+import ActivePlanBanner from '@/components/ActivePlanBanner'
 import { DictChapterButton } from './components/DictChapterButton'
 import PronunciationSwitcher from './components/PronunciationSwitcher'
 import ResultScreen from './components/ResultScreen'
@@ -179,6 +180,7 @@ const App: React.FC = () => {
         </div>
       </Layout>
       <WordList />
+      <ActivePlanBanner />
     </TypingContext.Provider>
   )
 }

@@ -1,31 +1,66 @@
 import TypingPage from '@/pages/Typing'
-import { completePlanDay, fetchPlanToday, getStoredApiKey } from '@/lib/apiClient'
+import { useAuth } from '@/hooks/useAuth'
+import {
+  completePlanDay,
+  fetchPlanToday,
+  getStoredApiKey,
+  setActivePlan,
+} from '@/lib/apiClient'
 import { idDictionaryMap } from '@/resources/dictionary'
 import { currentChapterAtom, currentDictIdAtom } from '@/store'
 import { planPracticeAtom } from '@/store/planPracticeAtom'
 import { useSetAtom } from 'jotai'
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams, Link } from 'react-router-dom'
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 import Loading from '@/components/Loading'
 
 export default function PracticePlanPage() {
   const { planId } = useParams<{ planId: string }>()
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const { signInWithKey } = useAuth()
   const date = searchParams.get('date') ?? new Date().toISOString().slice(0, 10)
+  const keyFromUrl = searchParams.get('key')
   const setPlanPractice = useSetAtom(planPracticeAtom)
   const setCurrentDictId = useSetAtom(currentDictIdAtom)
   const setCurrentChapter = useSetAtom(currentChapterAtom)
   const [error, setError] = useState('')
   const [ready, setReady] = useState(false)
+  const [authReady, setAuthReady] = useState(false)
 
+  // 从 MCP 链接自动登录（URL 带 key 参数）
   useEffect(() => {
     if (!planId) return
-    if (!getStoredApiKey()) {
-      setError('请先使用 API Key 登录')
-      return
+    let cancelled = false
+
+    const bootstrap = async () => {
+      try {
+        if (keyFromUrl?.startsWith('ql_')) {
+          await signInWithKey(keyFromUrl)
+          const clean = `/practice/plan/${planId}?date=${date}`
+          navigate(clean, { replace: true })
+        } else if (!getStoredApiKey()) {
+          const redirect = encodeURIComponent(`/practice/plan/${planId}?date=${date}`)
+          navigate(`/login?redirect=${redirect}`, { replace: true })
+          return
+        }
+        if (!cancelled) setAuthReady(true)
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : '自动登录失败')
+      }
     }
 
+    bootstrap()
+    return () => {
+      cancelled = true
+    }
+  }, [planId, date, keyFromUrl, navigate, signInWithKey])
+
+  useEffect(() => {
+    if (!planId || !authReady) return
+
     let cancelled = false
+    setActivePlan(planId, date)
 
     const load = async () => {
       try {
@@ -58,7 +93,7 @@ export default function PracticePlanPage() {
       cancelled = true
       setPlanPractice(null)
     }
-  }, [planId, date, setPlanPractice, setCurrentChapter, setCurrentDictId])
+  }, [planId, date, authReady, setPlanPractice, setCurrentChapter, setCurrentDictId])
 
   useEffect(() => {
     const onFinish = async () => {
@@ -82,7 +117,9 @@ export default function PracticePlanPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
         <p className="text-red-500">{error}</p>
-        <Link to="/login" className="text-indigo-600 hover:underline">去登录</Link>
+        <Link to={`/login?redirect=${encodeURIComponent(`/practice/plan/${planId}?date=${date}`)}`} className="text-indigo-600 hover:underline">
+          去登录
+        </Link>
         <Link to="/" className="text-gray-500 hover:underline">返回首页</Link>
       </div>
     )
