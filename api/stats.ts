@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { AuthError, validateApiKey } from './_lib/auth'
-import { handleOptions, json } from './_lib/http'
-import { getDailySnapshot } from './_lib/snapshot-builder'
-import { getStudySummary } from './_lib/stats-queries'
+import { AuthError, validateApiKey } from '../server/auth'
+import { handleOptions, json } from '../server/http'
+import { getDailySnapshot } from '../server/snapshot-builder'
+import { getStudySummary } from '../server/stats-queries'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return

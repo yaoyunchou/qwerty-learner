@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { handleOptions, json } from '../_lib/http'
-import { handleMcpRequest } from '../_lib/mcp-server'
-import { isSupabaseConfigured } from '../_lib/supabase'
+import { handleOptions, json } from '../../server/http'
+import { handleMcpRequest } from '../../server/mcp-server'
+import { isSupabaseConfigured } from '../../server/supabase'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return

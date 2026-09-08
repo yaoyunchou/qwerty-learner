@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { AuthError, validateApiKey } from '../_lib/auth'
-import { handleOptions, json } from '../_lib/http'
-import { completePlanDay, getDailyPlan, getPlanForUser, getPlanProgress } from '../_lib/plan-engine'
-import { finalizeChapterSession, recordPracticeEvent } from '../_lib/snapshot-builder'
-import { updateMemoryState } from '../_lib/memory-engine'
+import { AuthError, validateApiKey } from '../../server/auth'
+import { handleOptions, json } from '../../server/http'
+import { completePlanDay, getDailyPlan, getPlanForUser, getPlanProgress } from '../../server/plan-engine'
+import { finalizeChapterSession, recordPracticeEvent } from '../../server/snapshot-builder'
+import { updateMemoryState } from '../../server/memory-engine'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return

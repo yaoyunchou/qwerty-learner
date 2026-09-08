@@ -47,6 +47,16 @@
 - `vercel.json` 移除 `crons` 块（Hobby 计划会导致部署失败）
 - 移除 `functions` 通配配置，恢复与旧版一致的 SPA + API 路由
 
+### 修复 Vercel 部署失败（api/\_lib 被当作 Serverless Function）
+
+**根因：** Vercel 会将 `api/` 下所有 `.ts` 文件视为 Serverless Function。`api/_lib/*.ts` 虽为共享模块，但文件名未以 `_` 开头，且没有 `export default`，导致函数打包阶段失败。
+
+**修复：**
+
+- 将 `api/_lib/` 移至项目根目录 `server/`，仅 `api/*.ts` 保留为入口
+- 同步更新 `api/auth.ts`、`api/stats.ts`、`api/plans/[id].ts`、`api/mcp/index.ts` 的导入路径
+- `vercel.json` 移除 `installCommand`（与上次成功部署配置一致）
+
 ### 修复 Vercel 部署失败（api/auth.ts 错误导入路径）
 
 **根因：** 合并 `api/auth/*` 为 `api/auth.ts` 时，保留了子目录里的 `../_lib/*` 导入。文件上移到 `api/` 后应使用 `./_lib/*`，导致 Serverless 函数打包失败、整次部署失败。
