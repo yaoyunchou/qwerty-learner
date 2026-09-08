@@ -18,6 +18,8 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 const AnalysisPage = lazy(() => import('./pages/Analysis'))
 const GalleryPage = lazy(() => import('./pages/Gallery-N'))
+const PracticePlanPage = lazy(() => import('./pages/PracticePlan'))
+const KeyLogin = lazy(() => import('./pages/KeyLogin'))
 const AdminLayout = lazy(() => import('./pages/Admin'))
 const AdminLogin = lazy(() => import('./pages/Admin/Login'))
 const AdminDashboard = lazy(() => import('./pages/Admin/Dashboard'))
@@ -65,6 +67,8 @@ function Root() {
         <Suspense fallback={<Loading />}>
           <Routes>
             <Route path="/mobile" element={<MobilePage />} />
+            <Route path="/login" element={<KeyLogin />} />
+            <Route path="/practice/plan/:planId" element={<PracticePlanPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />

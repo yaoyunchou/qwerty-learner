@@ -12,9 +12,9 @@ const Footer: React.FC = () => {
       <button
         className="cursor-pointer text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400"
         type="button"
-        onClick={() => navigate(isLoggedIn ? '/admin' : '/admin/login')}
+        onClick={() => navigate(isLoggedIn ? '/admin' : '/login')}
       >
-        {isLoggedIn ? '管理后台' : '登录 / 后台'}
+        {isLoggedIn ? '管理后台' : '登录'}
       </button>
       <span className="text-gray-300 dark:text-gray-600">|</span>
       <span className="text-gray-500 dark:text-gray-400">© {new Date().getFullYear()} Qwerty Learner</span>

@@ -1,0 +1,175 @@
+-- Qwerty Learner MCP: users, API keys, study plans, memory & analytics
+
+-- ---------------------------------------------------------------------------
+-- users (independent of Supabase Auth)
+-- ---------------------------------------------------------------------------
+create table if not exists public.users (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
+-- api_keys
+-- ---------------------------------------------------------------------------
+create table if not exists public.api_keys (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users (id) on delete cascade,
+  key_prefix text not null unique,
+  key_hash text not null,
+  last_used_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists api_keys_user_id_idx on public.api_keys (user_id);
+
+-- ---------------------------------------------------------------------------
+-- recovery_emails (optional account recovery)
+-- ---------------------------------------------------------------------------
+create table if not exists public.recovery_emails (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null unique references public.users (id) on delete cascade,
+  email text not null,
+  verified_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
+-- study_plans
+-- ---------------------------------------------------------------------------
+create table if not exists public.study_plans (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users (id) on delete cascade,
+  title text not null default '',
+  source_dict_id text not null,
+  words_per_day integer not null default 20,
+  start_date date not null default current_date,
+  total_days integer not null,
+  review_ratio real not null default 0.3,
+  algorithm text not null default 'sm2' check (algorithm in ('sm2', 'ebbinghaus')),
+  status text not null default 'active' check (status in ('active', 'completed', 'paused')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists study_plans_user_id_idx on public.study_plans (user_id);
+
+-- ---------------------------------------------------------------------------
+-- study_plan_days
+-- ---------------------------------------------------------------------------
+create table if not exists public.study_plan_days (
+  id uuid primary key default gen_random_uuid(),
+  plan_id uuid not null references public.study_plans (id) on delete cascade,
+  scheduled_date date not null,
+  day_index integer not null,
+  words jsonb not null default '[]'::jsonb,
+  word_roles jsonb not null default '[]'::jsonb,
+  completed_at timestamptz,
+  stats jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  unique (plan_id, scheduled_date),
+  unique (plan_id, day_index)
+);
+
+create index if not exists study_plan_days_plan_date_idx on public.study_plan_days (plan_id, scheduled_date);
+
+-- ---------------------------------------------------------------------------
+-- word_memory_states (SRS)
+-- ---------------------------------------------------------------------------
+create type public.memory_status as enum ('new', 'learning', 'reviewing', 'mastered', 'lapsed');
+
+create table if not exists public.word_memory_states (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users (id) on delete cascade,
+  dict_id text not null,
+  word text not null,
+  memory_status public.memory_status not null default 'new',
+  first_seen_at timestamptz,
+  last_practiced_at timestamptz,
+  next_review_at timestamptz,
+  repetitions integer not null default 0,
+  ease_factor real not null default 2.5,
+  interval_days real not null default 0,
+  total_attempts integer not null default 0,
+  total_errors integer not null default 0,
+  avg_response_ms integer not null default 0,
+  last_wrong_count integer not null default 0,
+  memory_strength real not null default 0,
+  source_plan_id uuid references public.study_plans (id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, dict_id, word)
+);
+
+create index if not exists word_memory_states_user_review_idx
+  on public.word_memory_states (user_id, next_review_at);
+
+create index if not exists word_memory_states_user_status_idx
+  on public.word_memory_states (user_id, memory_status);
+
+-- ---------------------------------------------------------------------------
+-- word_practice_events
+-- ---------------------------------------------------------------------------
+create table if not exists public.word_practice_events (
+  id bigint generated by default as identity primary key,
+  user_id uuid not null references public.users (id) on delete cascade,
+  word text not null,
+  dict_id text not null,
+  plan_id uuid references public.study_plans (id) on delete set null,
+  plan_day_id uuid references public.study_plan_days (id) on delete set null,
+  wrong_count integer not null default 0,
+  timing_ms jsonb not null default '[]'::jsonb,
+  mistakes jsonb not null default '{}'::jsonb,
+  response_ms integer not null default 0,
+  wpm integer,
+  session_id text,
+  practiced_at timestamptz not null default now()
+);
+
+create index if not exists word_practice_events_user_practiced_idx
+  on public.word_practice_events (user_id, practiced_at desc);
+
+create index if not exists word_practice_events_user_word_idx
+  on public.word_practice_events (user_id, word, practiced_at desc);
+
+-- ---------------------------------------------------------------------------
+-- daily_snapshots
+-- ---------------------------------------------------------------------------
+create table if not exists public.daily_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users (id) on delete cascade,
+  date date not null,
+  plan_id uuid references public.study_plans (id) on delete set null,
+  streak_day integer not null default 0,
+  summary jsonb not null default '{}'::jsonb,
+  words jsonb not null default '[]'::jsonb,
+  weak_keys jsonb not null default '[]'::jsonb,
+  weak_words jsonb not null default '[]'::jsonb,
+  chapter_sessions jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, date)
+);
+
+create index if not exists daily_snapshots_user_date_idx on public.daily_snapshots (user_id, date desc);
+
+-- ---------------------------------------------------------------------------
+-- weekly_snapshots
+-- ---------------------------------------------------------------------------
+create table if not exists public.weekly_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users (id) on delete cascade,
+  week_start date not null,
+  week_end date not null,
+  consistency jsonb not null default '{}'::jsonb,
+  totals jsonb not null default '{}'::jsonb,
+  trends jsonb not null default '{}'::jsonb,
+  daily_breakdown jsonb not null default '[]'::jsonb,
+  top_weak_words jsonb not null default '[]'::jsonb,
+  top_weak_keys jsonb not null default '[]'::jsonb,
+  plan_progress jsonb not null default '{}'::jsonb,
+  ai_insights_seed jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, week_start)
+);
+
+create index if not exists weekly_snapshots_user_week_idx on public.weekly_snapshots (user_id, week_start desc);

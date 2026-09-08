@@ -2,6 +2,51 @@
 
 ## 2026-09-08
 
+### Qwerty Learner 远程 MCP 集成
+
+**目标：** 支持 AI 工具通过远程 HTTP MCP 创建学习计划、生成每日词库、读取学习数据；网页端改用 API Key 登录。
+
+**数据库（`supabase/migrations/20260908100000_mcp_users_and_plans.sql`）：**
+
+- 新增 `users`、`api_keys`、`recovery_emails`、`study_plans`、`study_plan_days`
+- 新增 SRS 与分析表：`word_memory_states`、`word_practice_events`、`daily_snapshots`、`weekly_snapshots`
+
+**服务端 API（Vercel Serverless）：**
+
+- `api/_lib/auth.ts`：API Key 生成/校验（`ql_` + bcrypt）
+- `api/_lib/plan-engine.ts`：学习计划拆分与每日词单
+- `api/_lib/memory-engine.ts`：SM-2 / 艾宾浩斯遗忘曲线
+- `api/_lib/snapshot-builder.ts`：日/周快照聚合
+- `api/_lib/mcp-server.ts` + `api/mcp/index.ts`：Streamable HTTP MCP（13 个 tools）
+- `api/auth/*`：create-key、login、bind-email
+- `api/plans/*`：计划查询、今日词单、练习回写
+- `api/stats/*`：summary、daily 数据分析
+- `api/cron/weekly-snapshot.ts`：周报告定时聚合
+
+**前端：**
+
+- `src/pages/KeyLogin.tsx` + `/login`：API Key 登录/注册
+- `src/lib/apiClient.ts`：统一 Bearer 鉴权
+- `src/pages/PracticePlan/` + `/practice/plan/:id`：计划练习页，打通 Typing 与完成回写
+- `src/store/authAtom.ts`：支持 API Key 与 Supabase Auth 双轨登录
+
+**依赖：** `@modelcontextprotocol/sdk`、`bcryptjs`、`zod`
+
+**部署注意：** 需配置 `SUPABASE_SERVICE_ROLE_KEY` 与 `SITE_URL`；执行新 migration；MCP 配置见 `README.md` MCP 章节。
+
+### MCP 首次绑定与 AI 提示词
+
+- 新增 `check_setup` 工具：检查 API Key 是否已配置，未配置返回 `needs_create_user`
+- 强化 `create_user`：返回 `mcpConfigSnippet`、`userMustDo` 引导步骤，支持创建时绑定 `recoveryEmail`
+- MCP Server `instructions` + `onboarding` prompt，未鉴权工具调用返回 `SETUP_REQUIRED` 结构化错误
+- 文档 [`docs/MCP_SETUP.md`](docs/MCP_SETUP.md)：安装配置 + 可复制 AI 提示词
+
+### 学习计划一键跳转网站
+
+- MCP `create_study_plan` / `get_daily_plan` 返回 `startLearningUrl`，指向生产站点并携带 API Key 实现自动登录
+- 练习页 `/practice/plan/:id` 自动关联计划词库；首页显示「继续今日学习计划」入口
+- Vercel 配置 `SITE_URL=https://qwerty-learner-3z4e.vercel.app` 确保链接指向正确域名
+
 ### 修复 Vercel 白屏（Supabase 环境变量缺失）
 
 **问题：** Vercel 生产环境未配置 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` 时，`@supabase/supabase-js` 在 `createClient('', '')` 阶段抛出 `supabaseUrl is required`，导致整站白屏（HTML 200 但 React 未挂载）。

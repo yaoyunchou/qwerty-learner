@@ -1,4 +1,5 @@
 import Layout from '../../components/Layout'
+import ActivePlanBanner from '@/components/ActivePlanBanner'
 import { DictChapterButton } from './components/DictChapterButton'
 import PronunciationSwitcher from './components/PronunciationSwitcher'
 import ResultScreen from './components/ResultScreen'
@@ -23,6 +24,7 @@ import {
 } from '@/store'
 import { IsDesktop, isLegal } from '@/utils'
 import { useSaveChapterRecord } from '@/utils/db'
+import { planPracticeAtom } from '@/store/planPracticeAtom'
 import { useMixPanelChapterLogUploader } from '@/utils/mixpanel'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import type React from 'react'
@@ -42,6 +44,7 @@ const App: React.FC = () => {
 
   const reviewModeInfo = useAtomValue(reviewModeInfoAtom)
   const isReviewMode = useAtomValue(isReviewModeAtom)
+  const planPractice = useAtomValue(planPracticeAtom)
 
   useEffect(() => {
     // 检测用户设备
@@ -117,10 +120,13 @@ const App: React.FC = () => {
     if (state.isFinished && !state.isSavingRecord) {
       chapterLogUploader()
       saveChapterRecord(state)
+      if (planPractice) {
+        window.dispatchEvent(new CustomEvent('ql-plan-complete', { detail: { planId: planPractice.planId } }))
+      }
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.isFinished, state.isSavingRecord])
+  }, [state.isFinished, state.isSavingRecord, planPractice])
 
   useEffect(() => {
     // 启动计时器
@@ -174,6 +180,7 @@ const App: React.FC = () => {
         </div>
       </Layout>
       <WordList />
+      <ActivePlanBanner />
     </TypingContext.Provider>
   )
 }

@@ -1,6 +1,8 @@
 import type { IChapterRecord, ICustomDict, IReviewRecord, IRevisionDictRecord, IWordRecord, LetterMistakes } from './record'
 import { ChapterRecord, ReviewRecord, WordRecord } from './record'
+import { recordPlanWord } from '@/lib/apiClient'
 import { supabase } from '@/lib/supabase'
+import { planPracticeAtom } from '@/store/planPracticeAtom'
 import { TypingContext, TypingStateActionType } from '@/pages/Typing/store'
 import type { TypingState } from '@/pages/Typing/store/type'
 import { currentChapterAtom, currentDictIdAtom, isReviewModeAtom } from '@/store'
@@ -112,6 +114,7 @@ export function useSaveWordRecord() {
   const currentChapter = useAtomValue(currentChapterAtom)
   const dictID = useAtomValue(currentDictIdAtom)
   const user = useAtomValue(currentUserAtom)
+  const planPractice = useAtomValue(planPracticeAtom)
 
   const { dispatch } = useContext(TypingContext) ?? {}
 
@@ -163,8 +166,20 @@ export function useSaveWordRecord() {
             if (error) console.error('[cloud] word record sync failed:', error.message)
           })
       }
+
+      if (planPractice) {
+        const responseMs = timing.reduce((a, b) => a + b, 0)
+        recordPlanWord(planPractice.planId, {
+          word,
+          dictId: planPractice.dictId,
+          wrongCount,
+          responseMs,
+          timingMs: timing,
+          mistakes: letterMistake as Record<string, string[]>,
+        }).catch((e) => console.error('[plan] word sync failed:', e))
+      }
     },
-    [currentChapter, dictID, dispatch, isRevision, user],
+    [currentChapter, dictID, dispatch, isRevision, user, planPractice],
   )
 
   return saveWordRecord
