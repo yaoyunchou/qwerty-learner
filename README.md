@@ -71,9 +71,17 @@ GitHub Pages: <https://realkai42.github.io/qwerty-learner/>
 
 **数据库：** 在 Supabase SQL Editor 执行 `supabase/migrations/20260908100000_mcp_users_and_plans.sql`
 
-**创建用户：** 调用 MCP tool `create_user` 或 `POST /api/auth/create-key`，保存返回的 `ql_` 前缀 API Key（仅展示一次）。
+#### 首次绑定流程（必做）
 
-**客户端配置示例（`.mcp.json` 或 Cursor MCP 设置）：**
+1. **先安装 MCP**（可无 Authorization）：见 `.mcp.json` 示例
+2. AI 调用 **`check_setup`** → 若 `needs_create_user`，调用 **`create_user`**
+3. **用户保存 apiKey**（仅一次），写入 MCP `Authorization: Bearer ql_xxx` 并重新连接
+4. （推荐）绑定找回邮箱：`bind_recovery_email`
+5. 再次 **`check_setup`** 确认 `configured: true` 后，才能创建学习计划
+
+完整安装说明与 **可复制 AI 提示词**：[`docs/MCP_SETUP.md`](docs/MCP_SETUP.md)
+
+**客户端配置（绑定 Key 后）：**
 
 ```json
 {
@@ -92,7 +100,9 @@ GitHub Pages: <https://realkai42.github.io/qwerty-learner/>
 
 | Tool | 说明 |
 |------|------|
-| `create_user` | 创建用户并返回 API Key |
+| `check_setup` | **第一步**：检查 Key 是否已绑定 |
+| `create_user` | **首次必调**：生成 API Key，可选绑定邮箱 |
+| `bind_recovery_email` | 绑定找回邮箱（推荐） |
 | `list_dictionaries` | 列出词库 |
 | `create_study_plan` | 创建学习计划 |
 | `get_daily_plan` | 获取某日词单 + 练习链接 |

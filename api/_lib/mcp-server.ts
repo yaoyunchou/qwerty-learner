@@ -2,17 +2,22 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import * as z from 'zod'
-import { AuthError, createUserWithKey, extractBearer, getSaveKeyWarning, validateApiKey } from './auth'
-import { getSiteOrigin, practicePlanUrl } from './http'
+import { bindRecoveryEmail, createUserWithKey, extractBearer, validateApiKey } from './auth'
 import { listDictionaries } from './dictionaries'
-import { bindRecoveryEmail } from './auth'
+import { getSiteOrigin } from './http'
+import {
+  MCP_SERVER_INSTRUCTIONS,
+  authRequiredPayload,
+  buildCreateUserResponse,
+  getSetupStatus,
+} from './mcp-onboarding'
+import { getMemoryOverview } from './memory-engine'
 import {
   createStudyPlan,
   getDailyPlan,
   getPlanProgress,
   suggestTodayWords,
 } from './plan-engine'
-import { getMemoryOverview } from './memory-engine'
 import {
   getDailySnapshot,
   getStreakInfo,
@@ -24,47 +29,56 @@ import {
   getWordDetail,
 } from './stats-queries'
 
-type AuthContext = { userId: string; plainKey?: string } | null
+type AuthContext = { userId: string; keyPrefix: string; plainKey?: string } | null
 
 function createServer(auth: AuthContext) {
-  const server = new McpServer({ name: 'qwerty-learner', version: '1.0.0' })
+  const server = new McpServer(
+    { name: 'qwerty-learner', version: '1.1.0' },
+    { instructions: MCP_SERVER_INSTRUCTIONS },
+  )
+
+  server.registerTool(
+    'check_setup',
+    {
+      description:
+        '【第一步必调】检查 MCP 是否已配置有效 API Key。未配置时返回 needs_create_user，必须先完成 create_user 才能使用其他工具。',
+      inputSchema: {},
+    },
+    async () => {
+      const status = await getSetupStatus(auth)
+      return { content: [{ type: 'text', text: JSON.stringify(status, null, 2) }] }
+    },
+  )
 
   server.registerTool(
     'create_user',
     {
-      description: 'Create a new Qwerty Learner user and return a one-time API key',
-      inputSchema: {},
+      description:
+        '【首次必调】创建 Qwerty Learner 账号并生成 API Key（无需鉴权）。Key 仅返回一次，必须让用户保存并写入 MCP Authorization header。可选绑定找回邮箱。',
+      inputSchema: {
+        recoveryEmail: z
+          .string()
+          .email()
+          .optional()
+          .describe('可选：用户找回邮箱，创建时一并绑定'),
+      },
     },
-    async () => {
+    async ({ recoveryEmail }) => {
       const result = await createUserWithKey()
-      const loginUrl = `${getSiteOrigin()}/login?key=${encodeURIComponent(result.apiKey)}`
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              {
-                apiKey: result.apiKey,
-                userId: result.userId,
-                warning: result.warning,
-                loginUrl,
-                siteUrl: getSiteOrigin(),
-              },
-              null,
-              2,
-            ),
-          },
-        ],
+      if (recoveryEmail) {
+        await bindRecoveryEmail(result.userId, recoveryEmail.trim().toLowerCase())
       }
+      const payload = buildCreateUserResponse(result, recoveryEmail)
+      return { content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }] }
     },
   )
 
   server.registerTool(
     'list_dictionaries',
     {
-      description: 'List available word dictionaries',
+      description: '列出可用词库（需要先完成 check_setup 且 configured: true）',
       inputSchema: {
-        language: z.string().optional().describe('Filter by language code, e.g. en, ja'),
+        language: z.string().optional().describe('按语言筛选，如 en、ja'),
       },
     },
     async ({ language }) => {
@@ -77,7 +91,7 @@ function createServer(auth: AuthContext) {
   server.registerTool(
     'create_study_plan',
     {
-      description: 'Create a study plan splitting dictionary words across days',
+      description: '创建学习计划（需要先完成账号绑定）',
       inputSchema: {
         dictId: z.string(),
         totalDays: z.number().int().min(1),
@@ -92,14 +106,28 @@ function createServer(auth: AuthContext) {
     async (input) => {
       const { userId, plainKey } = requireAuth(auth)
       const result = await createStudyPlan({ userId, ...input }, plainKey)
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                ...result,
+                userAction: '请让用户点击 startLearningUrl 在网站开始练习',
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      }
     },
   )
 
   server.registerTool(
     'get_daily_plan',
     {
-      description: 'Get words for a specific day of a study plan with practice URL',
+      description: '获取指定日期的学习计划词单与练习链接',
       inputSchema: {
         planId: z.string(),
         date: z.string().optional(),
@@ -115,7 +143,7 @@ function createServer(auth: AuthContext) {
   server.registerTool(
     'suggest_today_words',
     {
-      description: 'Suggest today words combining SRS review and new words',
+      description: '智能推荐今日词单（SRS 复习 + 新词）',
       inputSchema: {
         planId: z.string().optional(),
         wordsPerDay: z.number().int().optional(),
@@ -131,7 +159,7 @@ function createServer(auth: AuthContext) {
   server.registerTool(
     'get_daily_report',
     {
-      description: 'Get full daily learning report',
+      description: '获取指定日期的学习日报',
       inputSchema: { date: z.string().optional() },
     },
     async ({ date }) => {
@@ -144,7 +172,7 @@ function createServer(auth: AuthContext) {
   server.registerTool(
     'get_weekly_report',
     {
-      description: 'Get weekly learning report',
+      description: '获取周学习报告',
       inputSchema: { weekStart: z.string().optional() },
     },
     async ({ weekStart }) => {
@@ -157,7 +185,7 @@ function createServer(auth: AuthContext) {
   server.registerTool(
     'get_memory_overview',
     {
-      description: 'Get memory status counts and due review count',
+      description: '获取单词记忆状态全景',
       inputSchema: {},
     },
     async () => {
@@ -170,7 +198,7 @@ function createServer(auth: AuthContext) {
   server.registerTool(
     'get_word_detail',
     {
-      description: 'Get practice history and memory state for a word',
+      description: '获取单个单词的练习历史与记忆曲线',
       inputSchema: {
         word: z.string(),
         dictId: z.string().optional(),
@@ -186,7 +214,7 @@ function createServer(auth: AuthContext) {
   server.registerTool(
     'get_weakness_analysis',
     {
-      description: 'Analyze weak words, keys, and letter pairs',
+      description: '分析薄弱单词、按键和字母对',
       inputSchema: { days: z.number().int().optional() },
     },
     async ({ days }) => {
@@ -199,7 +227,7 @@ function createServer(auth: AuthContext) {
   server.registerTool(
     'get_streak_info',
     {
-      description: 'Get practice streak information',
+      description: '获取连续打卡信息',
       inputSchema: {},
     },
     async () => {
@@ -212,7 +240,7 @@ function createServer(auth: AuthContext) {
   server.registerTool(
     'get_plan_progress',
     {
-      description: 'Get study plan completion progress',
+      description: '获取学习计划完成进度',
       inputSchema: { planId: z.string() },
     },
     async ({ planId }) => {
@@ -225,13 +253,60 @@ function createServer(auth: AuthContext) {
   server.registerTool(
     'bind_recovery_email',
     {
-      description: 'Bind recovery email for API key recovery',
+      description: '绑定找回邮箱（账号创建后推荐操作，需已配置 API Key）',
       inputSchema: { email: z.string().email() },
     },
     async ({ email }) => {
       const { userId } = requireAuth(auth)
-      await bindRecoveryEmail(userId, email)
-      return { content: [{ type: 'text', text: JSON.stringify({ ok: true }, null, 2) }] }
+      await bindRecoveryEmail(userId, email.trim().toLowerCase())
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                ok: true,
+                email,
+                message: '找回邮箱已绑定。请提醒用户仍需自行保存 API Key，邮箱仅用于找回参考。',
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      }
+    },
+  )
+
+  server.registerPrompt(
+    'onboarding',
+    {
+      description: 'Qwerty Learner MCP 首次安装与账号绑定引导（无 Key 时必须先执行）',
+      argsSchema: {
+        hasExistingKey: z
+          .boolean()
+          .optional()
+          .describe('用户是否已有保存的 ql_ 开头 API Key'),
+      },
+    },
+    async ({ hasExistingKey }) => {
+      const site = getSiteOrigin()
+      const text = hasExistingKey
+        ? `用户已有 API Key。请指导其将 Key 写入 MCP 配置：
+headers.Authorization = "Bearer ql_xxx"
+然后调用 check_setup 确认 configured: true。
+网站：${site}/login`
+        : `用户首次安装 Qwerty Learner MCP。请严格按顺序执行：
+1. 调用 check_setup
+2. 若 needs_create_user，调用 create_user（可询问邮箱一并绑定）
+3. 向用户展示 apiKey，强调必须保存，并给出 mcpConfigSnippet
+4. 等待用户更新 MCP 配置并重新连接
+5. 再次 check_setup 确认 ready 后，再帮用户创建学习计划
+网站：${site}`
+
+      return {
+        messages: [{ role: 'user', content: { type: 'text', text } }],
+      }
     },
   )
 
@@ -239,7 +314,9 @@ function createServer(auth: AuthContext) {
 }
 
 function requireAuth(auth: AuthContext): { userId: string; plainKey?: string } {
-  if (!auth) throw new Error('Authorization required. Use Bearer ql_xxx API key.')
+  if (!auth) {
+    throw new Error(JSON.stringify(authRequiredPayload(), null, 2))
+  }
   return auth
 }
 
@@ -249,7 +326,7 @@ export async function handleMcpRequest(req: VercelRequest, res: VercelResponse) 
     const plainKey = extractBearer(req)
     if (plainKey) {
       const validated = await validateApiKey(req)
-      auth = { userId: validated.userId, plainKey }
+      auth = { userId: validated.userId, keyPrefix: validated.keyPrefix, plainKey }
     }
   } catch {
     auth = null
@@ -266,5 +343,3 @@ export async function handleMcpRequest(req: VercelRequest, res: VercelResponse) 
     server.close()
   })
 }
-
-export { getSaveKeyWarning }

@@ -34,6 +34,13 @@
 
 **部署注意：** 需配置 `SUPABASE_SERVICE_ROLE_KEY` 与 `SITE_URL`；执行新 migration；MCP 配置见 `README.md` MCP 章节。
 
+### MCP 首次绑定与 AI 提示词
+
+- 新增 `check_setup` 工具：检查 API Key 是否已配置，未配置返回 `needs_create_user`
+- 强化 `create_user`：返回 `mcpConfigSnippet`、`userMustDo` 引导步骤，支持创建时绑定 `recoveryEmail`
+- MCP Server `instructions` + `onboarding` prompt，未鉴权工具调用返回 `SETUP_REQUIRED` 结构化错误
+- 文档 [`docs/MCP_SETUP.md`](docs/MCP_SETUP.md)：安装配置 + 可复制 AI 提示词
+
 ### 学习计划一键跳转网站
 
 - MCP `create_study_plan` / `get_daily_plan` 返回 `startLearningUrl`，指向生产站点并携带 API Key 实现自动登录

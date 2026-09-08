@@ -1,7 +1,8 @@
 {
   "mcpServers": {
-    "supabase": {
-      "url": "https://mcp.supabase.com/mcp"
+    "qwerty-learner": {
+      "url": "https://qwerty-learner-3z4e.vercel.app/api/mcp",
+      "_comment": "首次安装无需 headers；create_user 后添加 Authorization: Bearer ql_xxx 并重新连接"
     }
   }
 }
