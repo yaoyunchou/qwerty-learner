@@ -1,5 +1,60 @@
 # Qwerty Learner MCP 安装与 AI 提示词
 
+## 零、服务端前置条件（必须先做）
+
+在 Cursor / Claude 里配置 MCP **之前**，生产环境必须就绪。否则调用 `check_setup` 会报错：
+
+```json
+{ "code": "SERVER_NOT_CONFIGURED", "error": "服务端尚未配置 Supabase，MCP 暂不可用" }
+```
+
+### 自检
+
+浏览器或终端访问：
+
+```text
+https://qwerty-learner-3z4e.vercel.app/api/health
+```
+
+当返回 `"mcpReady": true` 时，才继续下面的 MCP 安装。
+
+### A. Vercel 环境变量（Production + Preview）
+
+| 变量名                      | 说明                                             |
+| --------------------------- | ------------------------------------------------ |
+| `SUPABASE_URL`              | Supabase 项目 URL，如 `https://xxxx.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Service Role** Key（仅服务端，勿公开）         |
+| `VITE_SUPABASE_URL`         | 与 `SUPABASE_URL` 相同                           |
+| `VITE_SUPABASE_ANON_KEY`    | **Anon** Key（前端用）                           |
+| `SITE_URL`                  | `https://qwerty-learner-3z4e.vercel.app`         |
+
+在 [Supabase Dashboard → Project Settings → API](https://supabase.com/dashboard/project/_/settings/api) 复制 URL 与 Keys。
+
+保存后点击 **Redeploy**（必须重新部署才生效）。
+
+### B. Supabase 数据库迁移
+
+在 [SQL Editor](https://supabase.com/dashboard/project/_/sql) 粘贴并执行：
+
+`supabase/migrations/20260908100000_mcp_users_and_plans.sql`
+
+或使用脚本（需 `SUPABASE_ACCESS_TOKEN` + `SUPABASE_PROJECT_REF`）：
+
+```bash
+./scripts/supabase-activate.sh
+```
+
+### 常见报错对照
+
+| 现象                                   | 原因                                                         | 处理                             |
+| -------------------------------------- | ------------------------------------------------------------ | -------------------------------- |
+| `Supabase service role not set`        | Vercel 未配 `SUPABASE_SERVICE_ROLE_KEY`                      | 按上表补全并 Redeploy            |
+| MCP 工具列表里没有 qwerty-learner      | 仅在 `.mcp.json` 写了配置，未在 Cursor Settings 添加或未重连 | Cursor → MCP → 添加服务器 → 重启 |
+| Cloud Agent 无法调用 MCP               | 远程 MCP 需在你本机 Cursor 配置，Cloud Agent 不会自动继承    | 在本机 Cursor 对话中测试         |
+| `check_setup` 返回 `needs_create_user` | 正常，继续 `create_user`                                     | 按下方提示词流程                 |
+
+---
+
 ## 一、MCP 安装配置
 
 ### 阶段 A：首次安装（尚无 API Key）
@@ -46,7 +101,10 @@ AI 调用 `create_user` 后会返回 `mcpConfigSnippet`，将其中 `headers` �
 ```
 请帮我接入 Qwerty Learner 背单词 MCP（远程地址：https://qwerty-learner-3z4e.vercel.app/api/mcp）。
 
-【强制流程】在调用任何学习计划相关功能之前，必须完成账号绑定：
+【第 0 步】先请求 https://qwerty-learner-3z4e.vercel.app/api/health ，确认 JSON 里 mcpReady 为 true。
+若为 false，停止后续步骤，告诉我 missing 里缺哪些环境变量，并指引我按 docs/MCP_SETUP.md 配置 Vercel + Supabase。
+
+【强制流程】mcpReady 为 true 后，在调用任何学习计划相关功能之前，必须完成账号绑定：
 
 1. 先调用 MCP 工具 check_setup，检查我是否已配置有效 API Key
 2. 如果返回 needs_create_user：
@@ -89,12 +147,12 @@ check_setup
                     └─ bind_recovery_email（可选）
 ```
 
-| 工具 | 是否需要 Key | 说明 |
-|------|-------------|------|
-| `check_setup` | 否 | 检查绑定状态，**每次新对话建议先调** |
-| `create_user` | 否 | 生成 Key，可选 recoveryEmail |
-| `bind_recovery_email` | 是 | 绑定找回邮箱 |
-| 其他所有工具 | 是 | 未配置 Key 会返回 SETUP_REQUIRED |
+| 工具                  | 是否需要 Key | 说明                                 |
+| --------------------- | ------------ | ------------------------------------ |
+| `check_setup`         | 否           | 检查绑定状态，**每次新对话建议先调** |
+| `create_user`         | 否           | 生成 Key，可选 recoveryEmail         |
+| `bind_recovery_email` | 是           | 绑定找回邮箱                         |
+| 其他所有工具          | 是           | 未配置 Key 会返回 SETUP_REQUIRED     |
 
 ---
 

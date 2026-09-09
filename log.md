@@ -2,6 +2,12 @@
 
 ## 2026-09-09
 
+### MCP 安装报错说明与自检端点
+
+- `/api/health` 返回 `mcpReady` 与 `missing` 环境变量列表，部署前可自检
+- `/api/mcp` 未配置 Supabase 时返回 `SERVER_NOT_CONFIGURED` 中文说明（503）
+- `docs/MCP_SETUP.md` 新增「零、服务端前置条件」与常见报错对照表
+
 ### 移除前台登录按钮
 
 - `Header`：未登录时不再显示「登录」按钮；已登录仍保留「我的」入口
