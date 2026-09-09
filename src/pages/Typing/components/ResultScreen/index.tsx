@@ -12,7 +12,6 @@ import {
   reviewModeInfoAtom,
   wordDictationConfigAtom,
 } from '@/store'
-import { isLoggedInAtom } from '@/store/authAtom'
 import { Transition } from '@headlessui/react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useCallback, useContext, useEffect, useMemo } from 'react'
@@ -29,7 +28,6 @@ const ResultScreen = () => {
   const currentDictInfo = useAtomValue(currentDictInfoAtom)
   const [currentChapter, setCurrentChapter] = useAtom(currentChapterAtom)
   const randomConfig = useAtomValue(randomConfigAtom)
-  const isLoggedIn = useAtomValue(isLoggedInAtom)
   const navigate = useNavigate()
 
   const setReviewModeInfo = useSetAtom(reviewModeInfoAtom)
@@ -234,16 +232,6 @@ const ResultScreen = () => {
                 )}
               </div>
             </div>
-            {!isLoggedIn && (
-              <div className="mt-6 flex items-center justify-center">
-                <button
-                  onClick={() => navigate('/admin/login')}
-                  className="rounded-lg bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
-                >
-                  登录以同步练习记录到云端 →
-                </button>
-              </div>
-            )}
             <div className="mt-10 flex w-full justify-center gap-5 px-5 text-xl">
               {!isReviewMode && (
                 <>

@@ -19,7 +19,7 @@ const Header: React.FC<PropsWithChildren> = ({ children }) => {
         </NavLink>
         <nav className="my-card on element flex w-auto content-center items-center justify-end space-x-3 rounded-xl bg-white p-4 transition-colors duration-300 dark:bg-gray-800">
           {children}
-          {isLoggedIn ? (
+          {isLoggedIn && (
             <button
               onClick={() => navigate('/admin')}
               className="flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
@@ -29,13 +29,6 @@ const Header: React.FC<PropsWithChildren> = ({ children }) => {
                 {(user?.user_metadata?.nickname || user?.email || 'U').charAt(0).toUpperCase()}
               </span>
               <span className="hidden sm:inline">我的</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate('/admin/login')}
-              className="rounded-lg bg-indigo-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-indigo-600"
-            >
-              登录
             </button>
           )}
         </nav>

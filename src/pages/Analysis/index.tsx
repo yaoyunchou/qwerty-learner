@@ -4,10 +4,9 @@ import LineCharts from './components/LineCharts'
 import { useWordStats } from './hooks/useWordStats'
 import Layout from '@/components/Layout'
 import { isOpenDarkModeAtom } from '@/store'
-import { isLoggedInAtom } from '@/store/authAtom'
 import * as ScrollArea from '@radix-ui/react-scroll-area'
 import dayjs from 'dayjs'
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom } from 'jotai'
 import { useCallback } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { useNavigate } from 'react-router-dom'
@@ -36,7 +35,6 @@ const Analysis = () => {
 
   useHotkeys('enter,esc', onBack, { preventDefault: true })
 
-  const isLoggedIn = useAtomValue(isLoggedInAtom)
   const { isEmpty, isCloud, exerciseRecord, wordRecord, wpmRecord, accuracyRecord, wrongTimeRecord } = useWordStats(
     dayjs().subtract(1, 'year').unix(),
     dayjs().unix(),
@@ -46,19 +44,6 @@ const Analysis = () => {
     <Layout>
       <div className="flex w-full flex-1 flex-col overflow-y-auto pl-20 pr-20 pt-20">
         <IconX className="absolute right-20 top-10 mr-2 h-7 w-7 cursor-pointer text-gray-400" onClick={onBack} />
-        {!isLoggedIn && (
-          <div className="mx-4 mb-2 flex items-center justify-between rounded-lg bg-indigo-50 px-5 py-3 dark:bg-indigo-900/30">
-            <span className="text-sm text-indigo-700 dark:text-indigo-300">
-              当前显示本地数据。登录后可查看云端历史记录，支持跨设备同步。
-            </span>
-            <button
-              onClick={() => navigate('/admin/login')}
-              className="shrink-0 rounded-md bg-indigo-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-600"
-            >
-              去登录
-            </button>
-          </div>
-        )}
         {isCloud && (
           <div className="mx-4 mb-2 rounded-lg bg-green-50 px-5 py-2 text-sm text-green-700 dark:bg-green-900/30 dark:text-green-300">
             正在展示云端数据

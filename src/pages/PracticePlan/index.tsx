@@ -1,18 +1,13 @@
-import TypingPage from '@/pages/Typing'
+import Loading from '@/components/Loading'
 import { useAuth } from '@/hooks/useAuth'
-import {
-  completePlanDay,
-  fetchPlanToday,
-  getStoredApiKey,
-  setActivePlan,
-} from '@/lib/apiClient'
+import { completePlanDay, fetchPlanToday, getStoredApiKey, setActivePlan } from '@/lib/apiClient'
+import TypingPage from '@/pages/Typing'
 import { idDictionaryMap } from '@/resources/dictionary'
 import { currentChapterAtom, currentDictIdAtom } from '@/store'
 import { planPracticeAtom } from '@/store/planPracticeAtom'
 import { useSetAtom } from 'jotai'
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
-import Loading from '@/components/Loading'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 export default function PracticePlanPage() {
   const { planId } = useParams<{ planId: string }>()
@@ -40,8 +35,7 @@ export default function PracticePlanPage() {
           const clean = `/practice/plan/${planId}?date=${date}`
           navigate(clean, { replace: true })
         } else if (!getStoredApiKey()) {
-          const redirect = encodeURIComponent(`/practice/plan/${planId}?date=${date}`)
-          navigate(`/login?redirect=${redirect}`, { replace: true })
+          if (!cancelled) setError('请通过 AI 工具（MCP）生成的学习链接打开此页面')
           return
         }
         if (!cancelled) setAuthReady(true)
@@ -116,11 +110,10 @@ export default function PracticePlanPage() {
   if (error) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
-        <p className="text-red-500">{error}</p>
-        <Link to={`/login?redirect=${encodeURIComponent(`/practice/plan/${planId}?date=${date}`)}`} className="text-indigo-600 hover:underline">
-          去登录
+        <p className="text-center text-red-500">{error}</p>
+        <Link to="/" className="text-gray-500 hover:underline">
+          返回首页
         </Link>
-        <Link to="/" className="text-gray-500 hover:underline">返回首页</Link>
       </div>
     )
   }
